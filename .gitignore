@@ -1,0 +1,57 @@
+# Node.js
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+package-lock.json
+yarn.lock
+pnpm-lock.yaml
+
+# Build output
+dist/
+build/
+.cache/
+.next/
+out/
+.vite/
+
+# dotenv environment variables
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# Logs
+logs
+*.log
+*.log.*
+lerna-debug.log*
+
+# OS / Editor junk
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+*.swp
+*.swo
+*.swn
+*.bak
+
+# Coverage / test
+coverage/
+*.lcov
+.jest/
+__tests__/output/
+cypress/videos/
+cypress/screenshots/
+
+# MongoDB
+*.lock
+dump/
+*.pid
+
+# Uploads / user files (if any temp folder exists)
+uploads/
+tmp/
