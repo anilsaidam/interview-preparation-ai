@@ -15,6 +15,7 @@ const generateInterviewQuestions = async (req, res) => {
       return res.status(400).json({ message: "Missing required fields" });
     }
 
+
     const prompt = questionAnswerPrompt(
       role,
       experience,
@@ -24,6 +25,8 @@ const generateInterviewQuestions = async (req, res) => {
 
     const model = ai.getGenerativeModel({ model: "gemini-2.0-flash-lite" });
     const result = await model.generateContent(prompt);
+    
+
 
     let rawText = result.response.text();
 
@@ -44,13 +47,28 @@ const generateInterviewQuestions = async (req, res) => {
   }
 };
 
-// Generate Concept Explanation
+// Generate Concept Explanation with caching
 const generateConceptExplanation = async (req, res) => {
   try {
-    const { question } = req.body;
+    const { question, questionId } = req.body;
 
     if (!question) {
       return res.status(400).json({ message: "Missing required fields" });
+    }
+
+    // If questionId is provided, check if explanation already exists
+    if (questionId) {
+      const Question = require("../models/Question");
+      const existingQuestion = await Question.findById(questionId);
+      
+      if (existingQuestion && existingQuestion.explanation) {
+        // Return cached explanation
+        return res.status(200).json({
+          explanation: existingQuestion.explanation,
+          title: "Cached Explanation",
+          cached: true
+        });
+      }
     }
 
     const prompt = conceptExplainPrompt(question);
@@ -72,6 +90,14 @@ const generateConceptExplanation = async (req, res) => {
     } catch (e) {
       console.warn("⚠️ JSON parse failed, returning raw text instead");
       data = { output: cleanedText };
+    }
+
+    // Cache the explanation in the database if questionId is provided
+    if (questionId && (data.explanation || data.output)) {
+      const Question = require("../models/Question");
+      await Question.findByIdAndUpdate(questionId, {
+        explanation: data.explanation || data.output
+      });
     }
 
     res.status(200).json(data);

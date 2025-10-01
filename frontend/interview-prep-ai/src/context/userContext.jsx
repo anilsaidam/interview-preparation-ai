@@ -33,11 +33,20 @@ const UserProvider = ({children}) => {
         fetchUser();
     }, []);
 
-    const updateUser = (userData) => {
-        setUser(userData);
-        localStorage.setItem("token", userData.token); // Save token
-        setLoading(false);
+    const updateUser = async (userData) => {
+        try {
+            if (userData?.token) {
+                localStorage.setItem("token", userData.token);
+            }
+            const response = await axiosInstance.get(API_PATHS.AUTH.GET_PROFILE);
+            setUser(response.data);
+        } catch (err) {
+            console.error("Failed to refresh user profile", err);
+        } finally {
+            setLoading(false);
+        }
     }
+    
     
     const clearUser = () => {
         setUser(null);

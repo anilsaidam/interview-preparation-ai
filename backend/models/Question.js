@@ -7,6 +7,7 @@ const questionSchema = new mongoose.Schema(
     answer: { type: String },
     note: { type: String },
     isPinned: { type: Boolean, default: false },
+    explanation: { type: String }, // Store cached explanation
   },
   { timestamps: true }
 );
