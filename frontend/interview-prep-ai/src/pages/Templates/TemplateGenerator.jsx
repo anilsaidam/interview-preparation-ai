@@ -1,3 +1,7 @@
+// src/pages/Templates/TemplateGenerator.jsx
+// Updated: Removed Status & Generator trackers, removed rejection type, wider button,
+// Inter font for output, fixed totalGenerated counter, reset on navigation, preserve on refresh.
+
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import {
   LuCopy,
@@ -10,7 +14,8 @@ import {
   LuRotateCcw,
   LuSparkles,
   LuFolderOpen,
-  
+  LuArrowLeft,
+  LuBarcode,
 } from "react-icons/lu";
 import { toast } from "react-hot-toast";
 import DashboardLayout from "../../components/layouts/DashboardLayout";
@@ -22,12 +27,11 @@ const TEMPLATE_TYPES = [
   { value: "cold", label: "Cold mail to recruiter" },
   { value: "referral", label: "Ask for referral" },
   { value: "followup", label: "Follow up" },
-  { value: "thankyou", label: "Thank you" },
 ];
 
 const initialStats = { totalGenerated: 0, savedTemplates: 0 };
-const LS_KEY = "templateGenState:v2";
-const SESSION_FLAG = "templateGen_fresh_visit";
+const LS_KEY = "templateGenState:v4";
+const SESSION_FLAG = "templateGen_current_session";
 
 const TemplateGenerator = () => {
   const navigate = useNavigate();
@@ -60,26 +64,48 @@ const TemplateGenerator = () => {
     );
   }, [type, targetRole, yoe, jd, resumeFile, template]);
 
-  // Restore if refresh; reset if first SPA visit
+  // On mount: check if same session or new navigation
   useEffect(() => {
-    const freshVisit = sessionStorage.getItem(SESSION_FLAG);
-    if (!freshVisit) {
-      sessionStorage.setItem(SESSION_FLAG, "true");
-      isMountedRef.current = true;
-      return;
+    const currentSession = sessionStorage.getItem(SESSION_FLAG);
+    const isNewNavigation = !currentSession;
+
+    if (isNewNavigation) {
+      // Fresh navigation from another page: reset everything
+      sessionStorage.setItem(SESSION_FLAG, Date.now().toString());
+      setType("cold");
+      setTargetRole("");
+      setYoe("");
+      setJd("");
+      setResumeFile(null);
+      setTemplate("");
+      setStats(initialStats);
+      setErrors({});
+      setCopied(false);
+      
+      // Load only stats from localStorage (preserve cumulative counts)
+      try {
+        const saved = JSON.parse(localStorage.getItem(LS_KEY) || "{}");
+        if (saved.stats && typeof saved.stats === "object") {
+          setStats(saved.stats);
+        }
+      } catch {}
+    } else {
+      // Same session (refresh): restore everything
+      try {
+        const saved = JSON.parse(localStorage.getItem(LS_KEY) || "{}");
+        if (saved.type) setType(saved.type);
+        if (saved.targetRole) setTargetRole(saved.targetRole);
+        if (saved.yoe) setYoe(saved.yoe);
+        if (saved.jd) setJd(saved.jd);
+        if (saved.stats && typeof saved.stats === "object") setStats(saved.stats);
+        if (saved.template) setTemplate(saved.template);
+      } catch {}
     }
-    try {
-      const saved = JSON.parse(localStorage.getItem(LS_KEY) || "{}");
-      if (saved.type) setType(saved.type);
-      if (saved.targetRole) setTargetRole(saved.targetRole);
-      if (saved.yoe) setYoe(saved.yoe);
-      if (saved.jd) setJd(saved.jd);
-      if (saved.stats && typeof saved.stats === "object") setStats(saved.stats);
-      if (saved.template) setTemplate(saved.template);
-    } catch {}
+    
     isMountedRef.current = true;
   }, []);
 
+  // Persist to localStorage on state change
   useEffect(() => {
     if (!isMountedRef.current) return;
     try {
@@ -143,7 +169,19 @@ const TemplateGenerator = () => {
         toast.error("No template received. Please try again.");
       } else {
         setTemplate(out.trim());
-        setStats((s) => ({ ...s, totalGenerated: (s.totalGenerated || 0) + 1 }));
+        // Increment totalGenerated properly
+        setStats((prevStats) => {
+          const newStats = { 
+            ...prevStats, 
+            totalGenerated: (prevStats.totalGenerated || 0) + 1 
+          };
+          // Persist immediately
+          try {
+            const current = JSON.parse(localStorage.getItem(LS_KEY) || "{}");
+            localStorage.setItem(LS_KEY, JSON.stringify({ ...current, stats: newStats }));
+          } catch {}
+          return newStats;
+        });
         toast.success("Template generated");
       }
     } catch (err) {
@@ -185,7 +223,17 @@ const TemplateGenerator = () => {
       };
       const res = await axiosInstance.post(API_PATHS.TEMPLATES.SAVE, payload);
       if (res.data?.success) {
-        setStats((s) => ({ ...s, savedTemplates: (s.savedTemplates || 0) + 1 }));
+        setStats((prevStats) => {
+          const newStats = {
+            ...prevStats,
+            savedTemplates: (prevStats.savedTemplates || 0) + 1
+          };
+          try {
+            const current = JSON.parse(localStorage.getItem(LS_KEY) || "{}");
+            localStorage.setItem(LS_KEY, JSON.stringify({ ...current, stats: newStats }));
+          } catch {}
+          return newStats;
+        });
         toast.success(res.data?.message || "Template saved to library");
       } else {
         toast.success("Template saved");
@@ -215,7 +263,14 @@ const TemplateGenerator = () => {
       const saved = JSON.parse(localStorage.getItem(LS_KEY) || "{}");
       localStorage.setItem(
         LS_KEY,
-        JSON.stringify({ ...saved, type: "cold", targetRole: "", yoe: "", jd: "", template: "" })
+        JSON.stringify({ 
+          ...saved, 
+          type: "cold", 
+          targetRole: "", 
+          yoe: "", 
+          jd: "", 
+          template: "" 
+        })
       );
     } catch {}
     toast.success("Cleared");
@@ -234,6 +289,13 @@ const TemplateGenerator = () => {
           <div className="bg-zinc-900/50 border border-gray-800 rounded-2xl p-6 lg:p-8 mb-8">
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
               <div className="flex items-center gap-4">
+                <button
+                  onClick={() => navigate("/dashboard")}
+                  className="p-3 rounded-xl bg-zinc-800/70 border border-gray-700 hover:bg-zinc-800 transition-colors"
+                  title="Back to Dashboard"
+                >
+                  <LuArrowLeft className="w-6 h-6 text-emerald-400" />
+                </button>
                 <div className="p-3 bg-emerald-500/15 rounded-xl border border-emerald-500/20">
                   <LuSparkles className="w-7 h-7 text-emerald-400" />
                 </div>
@@ -242,7 +304,7 @@ const TemplateGenerator = () => {
                     AI Email Template Generator
                   </h1>
                   <p className="text-gray-400 mt-1">
-                    Generate short, professional emails for cold mail, referral, follow-up, and thank you.
+                    Generate professional emails for cold outreach, referrals, and follow-ups.
                   </p>
                 </div>
               </div>
@@ -258,70 +320,30 @@ const TemplateGenerator = () => {
               </div>
             </div>
 
-            {/* Trackers */}
-            <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-4 mt-8">
-              <div className="relative group rounded-xl border border-gray-800 bg-black/30 overflow-hidden">
+            {/* Trackers: Only 2 trackers now */}
+            <div className="grid grid-cols-2 gap-4 mt-8">
+              <div className="relative group rounded-2xl border border-gray-800 bg-black/30 overflow-hidden h-28">
                 <div className="absolute inset-0 bg-emerald-500/0 group-hover:bg-emerald-500/5 transition-colors duration-300" />
-                <div className="relative px-5 py-4 flex items-center justify-between">
-                  <div>
-                    <div className="text-xs uppercase tracking-wide text-gray-400 mb-1">
-                      Total Generated
+                <div className="relative h-full px-5 py-4 flex flex-col justify-between">
+                  <div className="text-xs uppercase tracking-wide text-gray-400">Total Generated</div>
+                  <div className="flex items-center justify-between">
+                    <div className="text-3xl font-extrabold text-white">{stats.totalGenerated || 0}</div>
+                    <div className="p-2 rounded-lg bg-emerald-500/10 border border-emerald-500/20">
+                      <LuBarcode className="w-5 h-5 text-emerald-400" />
                     </div>
-                    <div className="text-2xl font-bold text-white">
-                      {stats.totalGenerated || 0}
-                    </div>
-                  </div>
-                  <div className="p-2 rounded-lg bg-emerald-500/10 border border-emerald-500/20">
-                    <LuSparkles className="w-5 h-5 text-emerald-400" />
                   </div>
                 </div>
               </div>
 
-              <div className="relative group rounded-xl border border-gray-800 bg-black/30 overflow-hidden">
+              <div className="relative group rounded-2xl border border-gray-800 bg-black/30 overflow-hidden h-28">
                 <div className="absolute inset-0 bg-blue-500/0 group-hover:bg-blue-500/5 transition-colors duration-300" />
-                <div className="relative px-5 py-4 flex items-center justify-between">
-                  <div>
-                    <div className="text-xs uppercase tracking-wide text-gray-400 mb-1">
-                      Saved Templates
+                <div className="relative h-full px-5 py-4 flex flex-col justify-between">
+                  <div className="text-xs uppercase tracking-wide text-gray-400">Saved Templates</div>
+                  <div className="flex items-center justify-between">
+                    <div className="text-3xl font-extrabold text-white">{stats.savedTemplates || 0}</div>
+                    <div className="p-2 rounded-lg bg-blue-500/10 border border-blue-500/20">
+                      <LuFileText className="w-5 h-5 text-blue-300" />
                     </div>
-                    <div className="text-2xl font-bold text-white">
-                      {stats.savedTemplates || 0}
-                    </div>
-                  </div>
-                  <div className="p-2 rounded-lg bg-blue-500/10 border border-blue-500/20">
-                    <LuFileText className="w-5 h-5 text-blue-300" />
-                  </div>
-                </div>
-              </div>
-
-              <div className="hidden lg:block relative group rounded-xl border border-gray-800 bg-black/30 overflow-hidden">
-                <div className="absolute inset-0 bg-purple-500/0 group-hover:bg-purple-500/5 transition-colors duration-300" />
-                <div className="relative px-5 py-4 flex items-center justify-between">
-                  <div>
-                    <div className="text-xs uppercase tracking-wide text-gray-500 mb-1">
-                      Generator
-                    </div>
-                    <div className="text-lg font-semibold text-gray-300">Ready</div>
-                  </div>
-                  <div className="p-2 rounded-lg bg-purple-500/10 border border-purple-500/20">
-                    <LuSparkles className="w-5 h-5 text-purple-300" />
-                  </div>
-                </div>
-              </div>
-
-              <div className="hidden lg:block relative group rounded-xl border border-gray-800 bg-black/30 overflow-hidden">
-                <div className="absolute inset-0 bg-amber-500/0 group-hover:bg-amber-500/5 transition-colors duration-300" />
-                <div className="relative px-5 py-4 flex items-center justify-between">
-                  <div>
-                    <div className="text-xs uppercase tracking-wide text-gray-500 mb-1">
-                      Status
-                    </div>
-                    <div className="text-lg font-semibold text-gray-300">
-                      {loading ? "Generating..." : "Idle"}
-                    </div>
-                  </div>
-                  <div className="p-2 rounded-lg bg-amber-500/10 border border-amber-500/20">
-                    <LuTarget className="w-5 h-5 text-amber-300" />
                   </div>
                 </div>
               </div>
@@ -340,7 +362,6 @@ const TemplateGenerator = () => {
                   <h2 className="text-xl font-bold text-white">Template Details</h2>
                 </div>
 
-                {/* Clear button appears when any input/template present */}
                 {hasAnyInput && (
                   <button
                     onClick={onClear}
@@ -354,22 +375,29 @@ const TemplateGenerator = () => {
               </div>
 
               <div className="space-y-5">
+                {/* Type */}
                 <div>
                   <label className="block text-sm text-gray-300 mb-2">Template Type</label>
-                  <select
-                    value={type}
-                    onChange={(e) => setType(e.target.value)}
-                    className="w-full px-4 py-3 bg-black/40 text-white border border-gray-700 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
-                  >
-                    {TEMPLATE_TYPES.map((t) => (
-                      <option key={t.value} className="bg-zinc-900" value={t.value}>
-                        {t.label}
-                      </option>
-                    ))}
-                  </select>
+                  <div className="relative">
+                    <select
+                      value={type}
+                      onChange={(e) => setType(e.target.value)}
+                      className="w-full appearance-none px-4 py-3 bg-black/40 text-white border border-gray-700 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-transparent pr-10"
+                    >
+                      {TEMPLATE_TYPES.map((t) => (
+                        <option key={t.value} className="bg-zinc-900" value={t.value}>
+                          {t.label}
+                        </option>
+                      ))}
+                    </select>
+                    <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-gray-400">
+                      ▾
+                    </span>
+                  </div>
                   <p className="mt-2 text-xs text-gray-500">{reqHelp}</p>
                 </div>
 
+                {/* Target Role */}
                 <div>
                   <label className="block text-sm text-gray-300 mb-2">Target Role</label>
                   <input
@@ -386,6 +414,7 @@ const TemplateGenerator = () => {
                   )}
                 </div>
 
+                {/* YOE */}
                 <div>
                   <label className="block text-sm text-gray-300 mb-2">
                     Years of Experience (YOE)
@@ -404,6 +433,7 @@ const TemplateGenerator = () => {
                   {errors.yoe && <p className="mt-1 text-xs text-red-400">{errors.yoe}</p>}
                 </div>
 
+                {/* JD */}
                 <div>
                   <label className="block text-sm text-gray-300 mb-2">Job Description (JD)</label>
                   <textarea
@@ -418,6 +448,7 @@ const TemplateGenerator = () => {
                   {errors.jd && <p className="mt-1 text-xs text-red-400">{errors.jd}</p>}
                 </div>
 
+                {/* Resume */}
                 <div>
                   <label className="block text-sm text-gray-300 mb-2">Resume (File Upload)</label>
                   <div className="flex items-center gap-3">
@@ -438,11 +469,12 @@ const TemplateGenerator = () => {
                   {errors.resume && <p className="mt-1 text-xs text-red-400">{errors.resume}</p>}
                 </div>
 
-                <div className="pt-2 flex flex-wrap items-center gap-3">
+                {/* Generate - Wider button */}
+                <div className="pt-2">
                   <button
                     onClick={onGenerate}
                     disabled={loading}
-                    className="inline-flex items-center gap-2 px-5 py-3 rounded-xl bg-white text-black font-bold disabled:opacity-50 transition-all duration-300 hover:scale-[1.02]"
+                    className="w-full inline-flex items-center justify-center gap-2 px-6 py-3 rounded-xl bg-white text-black font-bold disabled:opacity-50 transition-all duration-300 hover:scale-[1.02]"
                   >
                     {loading ? (
                       <>
@@ -456,36 +488,11 @@ const TemplateGenerator = () => {
                       </>
                     )}
                   </button>
-
-                  <button
-                    onClick={onCopy}
-                    disabled={!template}
-                    className={`inline-flex items-center gap-2 px-4 py-3 rounded-xl border ${
-                      copied
-                        ? "border-emerald-500 text-emerald-400 bg-emerald-500/10"
-                        : "border-gray-700 text-gray-200 hover:bg-zinc-800"
-                    } transition-all duration-300 disabled:opacity-50 hover:scale-[1.02]`}
-                  >
-                    <LuCopy className={`w-4 h-4 ${copied ? "text-emerald-400" : ""}`} />
-                    {copied ? "Copied" : "Copy"}
-                  </button>
-
-                  <button
-                    onClick={onSave}
-                    disabled={!template || saving}
-                    className="inline-flex items-center gap-2 px-4 py-3 rounded-xl bg-emerald-600 text-white hover:bg-emerald-500 transition-colors duration-300 disabled:opacity-50 hover:scale-[1.02]"
-                  >
-                    {saving ? (
-                      <LuLoader className="w-4 h-4 animate-spin" />
-                    ) : (
-                      <LuSave className="w-4 h-4" />
-                    )}
-                    {saving ? "Saving..." : "Save"}
-                  </button>
                 </div>
               </div>
             </div>
 
+            {/* Right: Output */}
             <div className="bg-zinc-900/50 border border-gray-800 rounded-2xl p-6 lg:p-8">
               <div className="flex items-center justify-between mb-4">
                 <div className="flex items-center gap-3">
@@ -494,43 +501,46 @@ const TemplateGenerator = () => {
                   </div>
                   <h2 className="text-xl font-bold text-white">Generated Template</h2>
                 </div>
-                <div className="flex items-center gap-2">
-                  <button
-                    onClick={onCopy}
-                    disabled={!template}
-                    className={`px-3 py-2 rounded-lg text-sm transition-all duration-300 ${
-                      copied
-                        ? "bg-emerald-600 text-white hover:bg-emerald-500"
-                        : "bg-black/40 text-white border border-gray-700 hover:bg-zinc-800"
-                    } disabled:opacity-50`}
-                  >
-                    <div className="flex items-center gap-2">
-                      <LuCopy className={`w-4 h-4 ${copied ? "text-white" : ""}`} />
-                      <span>{copied ? "Copied" : "Copy"}</span>
-                    </div>
-                  </button>
-                  <button
-                    onClick={onSave}
-                    disabled={!template || saving}
-                    className="px-3 py-2 rounded-lg text-sm bg-emerald-600 text-white hover:bg-emerald-500 transition-colors duration-300 disabled:opacity-50"
-                  >
-                    <div className="flex items-center gap-2">
-                      {saving ? (
-                        <LuLoader className="w-4 h-4 animate-spin" />
-                      ) : (
-                        <LuSave className="w-4 h-4" />
-                      )}
-                      <span>{saving ? "Saving..." : "Save"}</span>
-                    </div>
-                  </button>
-                </div>
+
+                {/* Show copy/save only after response */}
+                {template && (
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={onCopy}
+                      className={`px-3 py-2 rounded-lg text-sm transition-all duration-300 ${
+                        copied
+                          ? "bg-emerald-600 text-white hover:bg-emerald-500"
+                          : "bg-black/40 text-white border border-gray-700 hover:bg-zinc-800"
+                      }`}
+                    >
+                      <div className="flex items-center gap-2">
+                        <LuCopy className={`w-4 h-4 ${copied ? "text-white" : ""}`} />
+                        <span>{copied ? "Copied" : "Copy"}</span>
+                      </div>
+                    </button>
+                    <button
+                      onClick={onSave}
+                      disabled={saving}
+                      className="px-3 py-2 rounded-lg text-sm bg-emerald-600 text-white hover:bg-emerald-500 transition-colors duration-300 disabled:opacity-50"
+                    >
+                      <div className="flex items-center gap-2">
+                        {saving ? (
+                          <LuLoader className="w-4 h-4 animate-spin" />
+                        ) : (
+                          <LuSave className="w-4 h-4" />
+                        )}
+                        <span>{saving ? "Saving..." : "Save"}</span>
+                      </div>
+                    </button>
+                  </div>
+                )}
               </div>
 
               <div className="bg-black/40 border border-gray-800 rounded-xl p-5 min-h-[260px] overflow-y-auto">
                 {loading ? (
                   <div className="text-gray-400">Waiting for AI response...</div>
                 ) : template ? (
-                  <pre className="whitespace-pre-wrap text-gray-100 text-sm leading-relaxed font-mono">
+                  <pre className="whitespace-pre-wrap text-gray-100 text-[14px] leading-relaxed font-['Inter',ui-sans-serif,system-ui,-apple-system,sans-serif]">
                     {template}
                   </pre>
                 ) : (
@@ -547,6 +557,7 @@ const TemplateGenerator = () => {
           </div>
         </div>
 
+        {/* Custom Scrollbar */}
         <style>
           {`
             ::-webkit-scrollbar { width: 6px; }

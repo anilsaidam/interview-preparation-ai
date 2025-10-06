@@ -36,7 +36,7 @@ const Dashboard = () => {
       id: 4,
       title: "AI Email Template Generator",
       description:
-        "Generate formal, human-like emails (cold mail, referral, follow-up, thank you) and save to your library.",
+        "Generate formal, human-like emails (cold mail, referral, follow-up) and save to your library.",
       icon: LuMail,
       path: "/templates",
       color: "text-orange-400",

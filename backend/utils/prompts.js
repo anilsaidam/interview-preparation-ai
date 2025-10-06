@@ -249,21 +249,20 @@ Return as JSON with keys: code, explanation, timeComplexity, spaceComplexity
 The explanation should use HTML formatting with <strong> tags for headings and • for bullet points.
 `;
 
-/* =========================
-   Template Generator prompts
-   ========================= */
+// backend/utils/prompts.js
+// Updated prompts: removed "thankyou", added "rejection" response.
+// Improved instructions for richer, human-like emails with light personalization and options.
+;
+
+// Backend prompt utilities (e.g., utils/templatePrompts.js or wherever you keep prompts)
 
 const baseConstraints = `
-- Output MUST include only:
-  1) Subject: <concise subject line>
-  2) Email:
-     <short, clear, professional email body>
-- Formal professional tone.
-- Human-written feel (avoid AI phrasing).
-- Keep it concise and actionable.
-- No greetings that feel robotic; keep it natural.
-- No meta commentary or explanations.
-- Do not add placeholders not provided; infer naturally from available details.
+- Produce an email that feels human and personable while remaining concise and professional.
+- Use an authentic voice (avoid AI clichés like "as an AI" or "I'm excited to apply for the role at your esteemed organization").
+- Prefer specific, concrete phrasing over generic fluff; include 1–2 tailored, high-impact lines derived from context.
+- Keep paragraphs short (2–3 lines) and scannable; avoid walls of text.
+- Provide one alternate subject line variant on the next line prefixed by "Alt:" for A/B testing.
+- Do not insert placeholders the user didn't provide; infer naturally from available details.
 - Use Indian English conventions where suitable (optional).
 `.trim();
 
@@ -276,31 +275,43 @@ Context:
 `.trim();
 
 const coldMailPrompt = (fields) => `
-Generate a short professional cold email to a recruiter for the role "${sanitize(
+Write a persuasive cold email to a recruiter for the role "${sanitize(
   fields.targetRole
-)}", with ${sanitize(fields.yoe)} years of experience. Reference relevant JD points and resume highlights where appropriate, without being verbose.
+)}", highlighting ${sanitize(fields.yoe)} years of experience and briefly aligning with the JD and relevant achievements.
 
 ${formatFields(fields)}
 
 ${baseConstraints}
+
+Output format:
+Subject: <compelling subject line>
+Alt: <alternate subject line>
+Email:
+<short, confident body with a concrete value hook, 1–2 specific ties to JD, and a clear next step>
 `.trim();
 
 const referralPrompt = (fields) => `
-Generate a short professional email requesting a referral for the role "${sanitize(
+Write a polite referral request for the role "${sanitize(
   fields.targetRole
-)}", with ${sanitize(fields.yoe)} years of experience. Reference JD and resume points briefly, and politely ask for a referral.
+)}", mentioning ${sanitize(fields.yoe)} years of experience and 1–2 reasons of fit tied to JD or accomplishments. Keep it respectful and low-friction to respond.
 
 ${formatFields(fields)}
 
 ${baseConstraints}
+
+Output format:
+Subject: <clear subject line for referral ask>
+Alt: <alternate subject line>
+Email:
+<brief body that respects their time, adds credibility, and includes an easy call-to-action>
 `.trim();
 
 const followUpPrompt = (fields) => `
-Generate a short professional follow-up email regarding the role "${sanitize(
+Write a concise follow-up email regarding the role "${sanitize(
   fields.targetRole
 )}" for a candidate with ${sanitize(
   fields.yoe
-)} years of experience. Keep it polite, concise, and appreciative.
+)} years of experience. Be polite, reaffirm fit with one concrete point, and suggest a next step.
 
 ${formatFields({
   ...fields,
@@ -309,27 +320,17 @@ ${formatFields({
 })}
 
 ${baseConstraints}
-`.trim();
 
-const thankYouPrompt = (fields) => `
-Generate a short professional thank-you email after an interview for the role "${sanitize(
-  fields.targetRole
-)}" for a candidate with ${sanitize(
-  fields.yoe
-)} years of experience. Express appreciation and reiterate interest concisely.
-
-${formatFields({
-  ...fields,
-  jd: "",
-  resumeHighlights: "",
-})}
-
-${baseConstraints}
+Output format:
+Subject: <polite follow-up subject>
+Alt: <alternate subject line>
+Email:
+<short, appreciative body that nudges a decision without pressure>
 `.trim();
 
 /**
- * Build template prompt for Gemini based on selected type.
- * type: "cold" | "referral" | "followup" | "thankyou"
+ * Build template prompt by type.
+ * type: "cold" | "referral" | "followup"
  * fields: { targetRole, yoe, jd, resumeHighlights }
  */
 const buildTemplatePrompt = (type, fields) => {
@@ -340,12 +341,15 @@ const buildTemplatePrompt = (type, fields) => {
       return referralPrompt(fields);
     case "followup":
       return followUpPrompt(fields);
-    case "thankyou":
-      return thankYouPrompt(fields);
     default:
       return coldMailPrompt(fields);
   }
 };
+
+
+
+
+
 
 module.exports = {
   // Interview/Explanation/ATS

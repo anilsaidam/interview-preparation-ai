@@ -1,9 +1,26 @@
+// src/pages/NewOverview.jsx
 import React, { useEffect, useMemo, useState } from "react";
 import DashboardLayout from "../../components/layouts/DashboardLayout";
 import axiosInstance from "../../utils/axiosInstance";
 import { API_PATHS } from "../../utils/apiPaths";
 import { useNavigate } from "react-router-dom";
-import { LuTrash2, LuSearch, LuFilter, LuPin, LuLoader, LuX, LuTrendingUp, LuCheck, LuUsers, LuTarget, LuBookmark, LuTrophy, LuPlus, LuCalendar } from "react-icons/lu";
+import {
+  LuTrash2,
+  LuSearch,
+  LuFilter,
+  LuPin,
+  LuLoader,
+  LuX,
+  LuTrendingUp,
+  LuCheck,
+  LuUsers,
+  LuTarget,
+  LuBookmark,
+  LuTrophy,
+  LuPlus,
+  LuCalendar,
+  LuArrowLeft,
+} from "react-icons/lu";
 import { toast } from "react-hot-toast";
 
 const NewOverview = () => {
@@ -14,13 +31,17 @@ const NewOverview = () => {
     activeCount: 0,
     pinnedCount: 0,
     completedCount: 0,
-    successStreak: 0
+    successStreak: 0,
   });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
   const [sortFilter, setSortFilter] = useState("newest");
-  const [deleteModal, setDeleteModal] = useState({ show: false, sessionId: null, sessionName: "" });
+  const [deleteModal, setDeleteModal] = useState({
+    show: false,
+    sessionId: null,
+    sessionName: "",
+  });
 
   // form state
   const [role, setRole] = useState("");
@@ -32,19 +53,24 @@ const NewOverview = () => {
 
   // Filter and sort sessions
   const filteredSessions = useMemo(() => {
-    let filtered = sessions.filter(session =>
-      session.role.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      session.topicsToFocus.toLowerCase().includes(searchQuery.toLowerCase())
+    let filtered = sessions.filter(
+      (session) =>
+        session.role.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        session.topicsToFocus.toLowerCase().includes(searchQuery.toLowerCase())
     );
 
     switch (sortFilter) {
       case "az":
         return filtered.sort((a, b) => a.role.localeCompare(b.role));
       case "oldest":
-        return filtered.sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt));
+        return filtered.sort(
+          (a, b) => new Date(a.createdAt) - new Date(b.createdAt)
+        );
       case "newest":
       default:
-        return filtered.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+        return filtered.sort(
+          (a, b) => new Date(b.createdAt) - new Date(a.createdAt)
+        );
     }
   }, [sessions, searchQuery, sortFilter]);
 
@@ -53,7 +79,7 @@ const NewOverview = () => {
       setLoading(true);
       const [sessionsRes, statsRes] = await Promise.all([
         axiosInstance.get(API_PATHS.SESSION.GET_ALL),
-        axiosInstance.get('/api/sessions/stats')
+        axiosInstance.get("/api/sessions/stats"),
       ]);
       setSessions(sessionsRes.data || []);
 
@@ -61,10 +87,10 @@ const NewOverview = () => {
       const serverStats = statsRes.data || {};
       setStats({
         createdCount: serverStats.createdCount || 0, // Total created including deleted
-        activeCount: serverStats.activeCount || 0,   // Active sessions with questions
-        pinnedCount: serverStats.pinnedCount || 0,   // Total pinned questions
+        activeCount: serverStats.activeCount || 0, // Active sessions with questions
+        pinnedCount: serverStats.pinnedCount || 0, // Total pinned questions
         completedCount: serverStats.completedCount || 0, // Completed sessions
-        successStreak: serverStats.completedCount || 0   // Same as completed count
+        successStreak: serverStats.completedCount || 0, // Same as completed count
       });
     } catch (e) {
       setError("Failed to load sessions");
@@ -84,12 +110,16 @@ const NewOverview = () => {
 
   const confirmDelete = async () => {
     try {
-      await axiosInstance.delete(API_PATHS.SESSION.DELETE(deleteModal.sessionId));
-      setSessions(prev => prev.filter(s => s._id !== deleteModal.sessionId));
+      await axiosInstance.delete(
+        API_PATHS.SESSION.DELETE(deleteModal.sessionId)
+      );
+      setSessions((prev) =>
+        prev.filter((s) => s._id !== deleteModal.sessionId)
+      );
       // Update stats after deletion
-      setStats(prev => ({
+      setStats((prev) => ({
         ...prev,
-        activeCount: Math.max(0, prev.activeCount - 1)
+        activeCount: Math.max(0, prev.activeCount - 1),
       }));
       toast.success("Session deleted successfully");
       closeDeleteModal();
@@ -120,8 +150,6 @@ const NewOverview = () => {
       });
       const questions = aiRes.data;
 
-      // 2) If resume uploaded, upload first to /api/ats/score? We only need path; reuse uploads via resumeUpload is not exposed. We'll skip server upload and rely on ATS feature separately; optional enhancement could be added later.
-
       // 3) Create session
       const res = await axiosInstance.post(API_PATHS.SESSION.CREATE, {
         role,
@@ -149,7 +177,7 @@ const NewOverview = () => {
       icon: LuUsers,
       color: "text-blue-400",
       bgColor: "bg-blue-500/10",
-      borderColor: "border-blue-500/20"
+      borderColor: "border-blue-500/20",
     },
     {
       label: "Active Sessions",
@@ -157,7 +185,7 @@ const NewOverview = () => {
       icon: LuTarget,
       color: "text-emerald-400",
       bgColor: "bg-emerald-500/10",
-      borderColor: "border-emerald-500/20"
+      borderColor: "border-emerald-500/20",
     },
     {
       label: "Pinned Questions",
@@ -165,7 +193,7 @@ const NewOverview = () => {
       icon: LuBookmark,
       color: "text-amber-400",
       bgColor: "bg-amber-500/10",
-      borderColor: "border-amber-500/20"
+      borderColor: "border-amber-500/20",
     },
     {
       label: "Success Streak",
@@ -174,8 +202,8 @@ const NewOverview = () => {
       color: "text-purple-400",
       bgColor: "bg-purple-500/10",
       borderColor: "border-purple-500/20",
-      showProgress: true
-    }
+      showProgress: true,
+    },
   ];
 
   return (
@@ -186,19 +214,29 @@ const NewOverview = () => {
           <div className="lg:col-span-1">
             <div className="bg-zinc-900/50 backdrop-blur-sm border border-gray-700 rounded-2xl p-8 sticky top-6 hover:bg-zinc-900/70 transition-all duration-300">
               <div className="flex items-center space-x-3 mb-6">
-                <div className="p-2 bg-gradient-to-r from-emerald-500/20 to-blue-500/20 rounded-xl">
-                  <LuPlus className="w-6 h-6 text-emerald-400" />
+                {/* Back arrow to dashboard */}
+                <div className="flex items-center justify-between mb-0.5">
+                  <button
+                    onClick={() => navigate("/dashboard")}
+                    className="p-2 rounded-xl bg-zinc-800/70 border border-gray-700 hover:bg-zinc-800 transition-colors"
+                    title="Back to Dashboard"
+                    type="button"
+                  >
+                    <LuArrowLeft className="w-7 h-7 text-emerald-400" />
+                  </button>
+                  <div className="h-5" />
                 </div>
+
                 <div>
                   <h3 className="text-xl font-bold text-white">
-                    Create New Session
+                    Create New Interview Session
                   </h3>
                   <p className="text-sm text-gray-400">
                     Enter details. Questions will be generated automatically.
                   </p>
                 </div>
               </div>
-              
+
               <form onSubmit={createSession} className="space-y-6">
                 <div className="space-y-2">
                   <label className="block text-sm font-semibold text-gray-300">
@@ -212,7 +250,7 @@ const NewOverview = () => {
                     required
                   />
                 </div>
-                
+
                 <div className="space-y-2">
                   <label className="block text-sm font-semibold text-gray-300">
                     Years of Experience *
@@ -225,7 +263,7 @@ const NewOverview = () => {
                     required
                   />
                 </div>
-                
+
                 <div className="space-y-2">
                   <label className="block text-sm font-semibold text-gray-300">
                     Topics to Focus On *
@@ -238,7 +276,7 @@ const NewOverview = () => {
                     required
                   />
                 </div>
-                
+
                 <div className="space-y-2">
                   <label className="block text-sm font-semibold text-gray-300">
                     Description (optional)
@@ -251,7 +289,7 @@ const NewOverview = () => {
                     onChange={(e) => setDescription(e.target.value)}
                   />
                 </div>
-                
+
                 <div className="space-y-2">
                   <label className="block text-sm font-semibold text-gray-300">
                     Upload Resume (optional)
@@ -263,13 +301,13 @@ const NewOverview = () => {
                     className="block w-full text-sm text-gray-300 file:mr-4 file:py-3 file:px-4 file:rounded-xl file:border-0 file:text-sm file:font-semibold file:bg-white file:text-black  file:transition-all file:duration-300"
                   />
                 </div>
-                
+
                 {error && (
                   <div className="text-sm text-red-400 bg-red-900/20 border border-red-500/20 p-4 rounded-xl">
                     {error}
                   </div>
                 )}
-                
+
                 <button
                   type="submit"
                   className="w-full px-6 py-4 rounded-xl bg-white text-black font-bold transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-3 shadow-lg hover:shadow-emerald-500/25 hover:scale-105"
@@ -303,30 +341,38 @@ const NewOverview = () => {
                     className={`bg-zinc-900/50 backdrop-blur-sm border ${stat.borderColor} rounded-2xl p-6 hover:scale-105 transition-all duration-300 group cursor-pointer ${stat.bgColor}`}
                   >
                     <div className="flex items-start justify-between mb-4">
-                      <div className={`p-3 rounded-xl ${stat.bgColor} ${stat.borderColor} border group-hover:scale-110 transition-transform duration-300`}>
+                      <div
+                        className={`p-3 rounded-xl ${stat.bgColor} ${stat.borderColor} border group-hover:scale-110 transition-transform duration-300`}
+                      >
                         <IconComponent className={`w-6 h-6 ${stat.color}`} />
                       </div>
                       {stat.showProgress && (
                         <LuTrendingUp className="w-4 h-4 text-gray-500" />
                       )}
                     </div>
-                    
+
                     <div className="text-xs text-gray-400 mb-2 font-medium uppercase tracking-wider">
                       {stat.label}
                     </div>
-                    
+
                     <div className="flex items-end justify-between">
                       <div className="text-3xl font-bold text-white group-hover:text-emerald-400 transition-colors duration-300">
                         {stat.value}
                       </div>
-                      
+
                       {stat.showProgress && (
                         <div className="flex-1 ml-4">
                           <div className="w-full bg-gray-700 rounded-full h-2 mb-2">
                             <div
                               className="bg-green-500 h-2 rounded-full transition-all duration-500"
                               style={{
-                                width: `${stats.activeCount > 0 ? (stats.completedCount / stats.activeCount) * 100 : 0}%`,
+                                width: `${
+                                  stats.activeCount > 0
+                                    ? (stats.completedCount /
+                                        stats.activeCount) *
+                                      100
+                                    : 0
+                                }%`,
                               }}
                             ></div>
                           </div>
@@ -363,18 +409,30 @@ const NewOverview = () => {
                   className="w-full pl-12 pr-4 py-3 border border-gray-600 rounded-xl bg-zinc-800/50 text-white placeholder-gray-500 focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all duration-300 hover:border-gray-500"
                 />
               </div>
-              
+
+              {/* Improved dropdown UI */}
               <div className="flex items-center gap-3 bg-zinc-800/50 border border-gray-600 rounded-xl px-4 py-3 hover:border-gray-500 transition-colors duration-300">
                 <LuFilter className="text-gray-500 w-5 h-5" />
-                <select
-                  value={sortFilter}
-                  onChange={(e) => setSortFilter(e.target.value)}
-                  className="bg-transparent text-white focus:outline-none"
-                >
-                  <option value="newest" className="bg-zinc-800">Newest First</option>
-                  <option value="oldest" className="bg-zinc-800">Oldest First</option>
-                  <option value="az" className="bg-zinc-800">A-Z</option>
-                </select>
+                <div className="relative">
+                  <select
+                    value={sortFilter}
+                    onChange={(e) => setSortFilter(e.target.value)}
+                    className="appearance-none bg-transparent text-white focus:outline-none pr-8"
+                  >
+                    <option value="newest" className="bg-zinc-800">
+                      Newest First
+                    </option>
+                    <option value="oldest" className="bg-zinc-800">
+                      Oldest First
+                    </option>
+                    <option value="az" className="bg-zinc-800">
+                      A-Z
+                    </option>
+                  </select>
+                  <span className="pointer-events-none absolute right-0 top-1/2 -translate-y-1/2 text-gray-400">
+                    ▾
+                  </span>
+                </div>
               </div>
             </div>
 
@@ -382,7 +440,10 @@ const NewOverview = () => {
             {loading ? (
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 {Array.from({ length: 4 }).map((_, i) => (
-                  <div key={i} className="bg-zinc-900/50 border border-gray-700 rounded-2xl p-6 animate-pulse">
+                  <div
+                    key={i}
+                    className="bg-zinc-900/50 border border-gray-700 rounded-2xl p-6 animate-pulse"
+                  >
                     <div className="h-4 bg-gray-700 rounded w-3/4 mb-3"></div>
                     <div className="h-3 bg-gray-700 rounded w-1/2 mb-4"></div>
                     <div className="h-3 bg-gray-700 rounded w-full mb-2"></div>
@@ -392,91 +453,108 @@ const NewOverview = () => {
               </div>
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {filteredSessions.map((s) => (
-                  <div
-                    key={s._id}
-                    className="bg-zinc-900/50 backdrop-blur-sm border border-gray-700 rounded-2xl p-6 hover:bg-zinc-900/70 hover:border-emerald-500/50 hover:scale-105 transition-all duration-300 cursor-pointer group relative overflow-hidden"
-                    onClick={() => navigate(`/interview-prep/${s._id}`)}
-                  >
-                    {/* Gradient overlay on hover */}
-                    <div className="absolute inset-0 bg-gradient-to-br from-emerald-500/5 to-blue-500/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-                    
-                    <div className="relative z-10">
-                      <div className="absolute top-0 right-0 flex items-center gap-2">
-                        <button
-                          onClick={(e) => openDeleteModal(s._id, s.role, e)}
-                          className="p-2 text-red-400 hover:text-red-300 hover:bg-red-500/20 rounded-xl transition-all duration-300"
-                        >
-                          <LuTrash2 className="w-4 h-4" />
-                        </button>
-                      </div>
+                {filteredSessions.map((s) => {
+                  const pinnedCount =
+                    s.questions?.filter((q) => q.isPinned)?.length || 0;
 
-                      <div className="pr-16">
-                        <div className="font-bold text-xl text-white mb-2 group-hover:text-emerald-400 transition-colors duration-300">
-                          {s.role}
-                        </div>
-                        
-                        <div className="flex items-center gap-4 text-sm text-gray-400 mb-4">
-                          <span className="flex items-center gap-1">
-                            <LuUsers className="w-4 h-4" />
-                            YOE: {s.experience}
-                          </span>
-                          <span className="flex items-center gap-1">
-                            <LuCalendar className="w-4 h-4" />
-                            {new Date(s.createdAt).toLocaleDateString()}
-                          </span>
+                  return (
+                    <div
+                      key={s._id}
+                      className="bg-zinc-900/50 backdrop-blur-sm border border-gray-700 rounded-2xl p-6 hover:bg-zinc-900/70 hover:border-emerald-500/50 hover:scale-105 transition-all duration-300 cursor-pointer group relative overflow-hidden"
+                      onClick={() => navigate(`/interview-prep/${s._id}`)}
+                    >
+                      {/* Gradient overlay on hover */}
+                      <div className="absolute inset-0 bg-gradient-to-br from-emerald-500/5 to-blue-500/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+
+                      <div className="relative z-10">
+                        <div className="absolute top-0 right-0 flex items-center gap-2">
+                          <button
+                            onClick={(e) => openDeleteModal(s._id, s.role, e)}
+                            className="p-2 text-red-400 hover:text-red-300 hover:bg-red-500/20 rounded-xl transition-all duration-300"
+                          >
+                            <LuTrash2 className="w-4 h-4" />
+                          </button>
                         </div>
 
-                        <div className="text-gray-300 mb-4">
-                          <span className="font-medium">Focus:</span> {s.topicsToFocus}
-                        </div>
-
-                        {s.completed && (
-                          <div className="mb-4">
-                            <div className="flex items-center gap-2 bg-green-500/20 border border-green-500/20 rounded-xl px-3 py-2">
-                              <LuCheck className="w-4 h-4 text-green-400" />
-                              <span className="text-sm text-green-400 font-semibold">Completed</span>
-                            </div>
+                        <div className="pr-16">
+                          <div className="font-bold text-xl text-white mb-2 group-hover:text-emerald-400 transition-colors duration-300">
+                            {s.role}
                           </div>
-                        )}
 
-                        {/* Show pinned count */}
-                        {s.questions && s.questions.filter(q => q.isPinned).length > 0 && (
-                          <div className="mb-4">
-                            <div className="flex items-center gap-2 bg-amber-500/20 border border-amber-500/20 rounded-xl px-3 py-2">
-                              <LuPin className="w-4 h-4 text-amber-400" />
-                              <span className="text-sm text-amber-400 font-semibold">
-                                {s.questions.filter(q => q.isPinned).length} Pinned Questions
-                              </span>
-                            </div>
+                          <div className="flex items-center gap-4 text-sm text-gray-400 mb-4">
+                            <span className="flex items-center gap-1">
+                              <LuUsers className="w-4 h-4" />
+                              YOE: {s.experience}
+                            </span>
+                            <span className="flex items-center gap-1">
+                              <LuCalendar className="w-4 h-4" />
+                              {new Date(s.createdAt).toLocaleDateString()}
+                            </span>
                           </div>
-                        )}
 
-                        <div className="flex items-center justify-between pt-4 border-t border-gray-700">
-                          <span className="text-sm text-gray-400 font-medium">
-                            {s.questions?.length || 0} questions
-                          </span>
-                          <div className="flex items-center gap-2 text-emerald-400 font-medium group-hover:translate-x-1 transition-transform duration-300">
-                            <span className="text-sm">View Session</span>
-                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                            </svg>
+                          <div className="text-gray-300 mb-4">
+                            <span className="font-medium">Focus:</span>{" "}
+                            {s.topicsToFocus}
+                          </div>
+
+                          {/* Compact tags row: Completed + Pinned side by side */}
+                          {(s.completed || pinnedCount > 0) && (
+                            <div className="mb-4 flex items-center gap-2">
+                              {s.completed && (
+                                <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-green-500/15 border border-green-500/25 text-green-300 text-xs font-semibold whitespace-nowrap">
+                                  <LuCheck className="w-3.5 h-3.5" />
+                                  Completed
+                                </span>
+                              )}
+                              {pinnedCount > 0 && (
+                                <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-amber-500/15 border border-amber-500/25 text-amber-300 text-xs font-semibold whitespace-nowrap">
+                                  <LuPin className="w-3.5 h-3.5" />
+                                  {pinnedCount} pinned
+                                </span>
+                              )}
+                            </div>
+                          )}
+
+                          <div className="flex items-center justify-between pt-4 border-t border-gray-700">
+                            <span className="text-sm text-gray-400 font-medium">
+                              {s.questions?.length || 0} questions
+                            </span>
+                            <div className="flex items-center gap-2 text-emerald-400 font-medium group-hover:translate-x-1 transition-transform duration-300">
+                              <span className="text-sm">View Session</span>
+                              <svg
+                                className="w-4 h-4"
+                                fill="none"
+                                stroke="currentColor"
+                                viewBox="0 0 24 24"
+                              >
+                                <path
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                  strokeWidth={2}
+                                  d="M9 5l7 7-7 7"
+                                />
+                              </svg>
+                            </div>
                           </div>
                         </div>
                       </div>
                     </div>
-                  </div>
-                ))}
-                
+                  );
+                })}
+
                 {filteredSessions.length === 0 && (
                   <div className="col-span-2 text-center py-16">
                     <div className="bg-zinc-900/50 border border-gray-700 rounded-2xl p-8">
                       <LuTarget className="w-16 h-16 text-gray-600 mx-auto mb-4" />
                       <div className="text-xl font-semibold text-gray-400 mb-2">
-                        {searchQuery ? "No sessions match your search" : "No sessions yet"}
+                        {searchQuery
+                          ? "No sessions match your search"
+                          : "No sessions yet"}
                       </div>
                       <div className="text-gray-500">
-                        {searchQuery ? "Try adjusting your search terms." : "Create your first session to get started."}
+                        {searchQuery
+                          ? "Try adjusting your search terms."
+                          : "Create your first session to get started."}
                       </div>
                     </div>
                   </div>
@@ -504,11 +582,15 @@ const NewOverview = () => {
                   <LuX className="w-5 h-5" />
                 </button>
               </div>
-              
+
               <p className="text-gray-300 mb-8 leading-relaxed">
-                Are you sure you want to delete the session <span className="font-semibold text-white">"{deleteModal.sessionName}"</span>? This action cannot be undone.
+                Are you sure you want to delete the session{" "}
+                <span className="font-semibold text-white">
+                  "{deleteModal.sessionName}"
+                </span>
+                ? This action cannot be undone.
               </p>
-              
+
               <div className="flex gap-4 justify-end">
                 <button
                   onClick={closeDeleteModal}
