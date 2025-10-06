@@ -139,12 +139,12 @@ const ATSSavedReports = () => {
                 return (
                   <div
                     key={report._id}
-                    className="bg-zinc-900/50 backdrop-blur-sm border border-gray-700 rounded-2xl p-6 hover:bg-zinc-900/70 hover:border-purple-500/50 hover:scale-105 transition-all duration-300 group"
+                    className="bg-zinc-900/50 backdrop-blur-sm border border-gray-700 rounded-2xl p-6 hover:bg-zinc-900/70 hover:border-blue-500/50 hover:scale-105 transition-all duration-300 group"
                   >
                     {/* Report Header */}
                     <div className="flex items-start justify-between mb-6">
                       <div className="flex-1 min-w-0">
-                        <h3 className="font-bold text-white text-lg mb-2 truncate group-hover:text-purple-400 transition-colors duration-300">
+                        <h3 className="font-bold text-white text-lg mb-2 truncate group-hover:text-blue-400 transition-colors duration-300">
                           {report.originalFileName || 'Resume Analysis'}
                         </h3>
                         <div className="flex items-center gap-2 text-sm text-gray-400">

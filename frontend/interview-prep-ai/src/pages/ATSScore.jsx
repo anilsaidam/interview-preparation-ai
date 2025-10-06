@@ -4,7 +4,7 @@ import DashboardLayout from "../components/layouts/DashboardLayout";
 import axiosInstance from "../utils/axiosInstance";
 import { API_PATHS } from "../utils/apiPaths";
 import { toast } from "react-hot-toast";
-import { LuDownload, LuSave, LuCopy, LuFileText, LuInfo, LuRotateCcw } from "react-icons/lu";
+import { LuDownload, LuSave, LuCopy, LuFileText, LuInfo, LuRotateCcw, LuArrowLeft } from "react-icons/lu";
 
 const LS_KEYS = {
   FORM: "ats_form_v2",
@@ -268,11 +268,23 @@ const ATSScore = () => {
               {/* Left: Form */}
               <div className="lg:col-span-1 bg-zinc-900/50 backdrop-blur-sm border border-gray-700 rounded-2xl p-6">
                 <div className="flex items-center justify-between mb-4">
+                  {/* Back arrow to dashboard */}
+                <div className="flex items-center justify-between mb-0.5">
+                  <button
+                    onClick={() => navigate("/dashboard")}
+                    className="p-2 rounded-xl bg-zinc-800/70 border border-gray-700 hover:bg-zinc-800 transition-colors cursor-pointer"
+                    title="Back to Dashboard"
+                    type="button"
+                  >
+                    <LuArrowLeft className="w-5 h-5 text-blue-400 " />
+                  </button>
+                  <div className="h-5" />
+                </div>
                   <h2 className="text-xl font-bold text-white">ATS Resume Score</h2>
                   <div className="flex items-center gap-2">
                     <button
                       onClick={() => navigate("/ats-score/saved-reports")}
-                      className="text-sm text-blue-400 hover:text-blue-300 flex items-center gap-1 px-3 py-2 rounded-xl hover:bg-blue-500/20 transition-colors"
+                      className="text-sm text-blue-400 hover:text-blue-300 flex items-center gap-1 px-3 py-2 rounded-xl hover:bg-blue-500/20 transition-colors cursor-pointer"
                     >
                       <LuFileText className="w-4 h-4" />
                       Saved Reports ({savedReports.length})
