@@ -339,7 +339,7 @@ const ATSScore = () => {
                       type="file"
                       accept=".pdf,.docx,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
                       onChange={(e) => setFile(e.target.files?.[0] || null)}
-                      className="file-input-custom block w-full text-sm text-gray-300"
+                      className="file-input-custom block w-full text-sm text-gray-300 cursor-pointer"
                     />
                     {/* Filename hint if persisted but file not reloaded */}
                     {!file && localStorage.getItem(LS_KEYS.FILE_NAME) ? (
@@ -386,7 +386,7 @@ const ATSScore = () => {
                   <div className="flex items-center gap-3">
                     <button
                       type="submit"
-                      className="flex-1 px-6 py-4 rounded-xl bg-white hover:bg-gray-100 text-black font-bold transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg hover:scale-105"
+                      className="flex-1 px-6 py-4 rounded-xl bg-white hover:bg-gray-100 text-black font-bold transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg hover:scale-105 cursor-pointer"
                       disabled={loading}
                     >
                       {loading ? "Scoring..." : "Get ATS Score"}

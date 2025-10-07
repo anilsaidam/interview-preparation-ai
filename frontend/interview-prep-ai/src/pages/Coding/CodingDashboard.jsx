@@ -3,7 +3,7 @@ import DashboardLayout from "../../components/layouts/DashboardLayout";
 import axiosInstance from "../../utils/axiosInstance";
 import { API_PATHS } from "../../utils/apiPaths";
 import { useNavigate } from "react-router-dom";
-import { LuCode, LuPin, LuCheck, LuTrash2, LuLoader, LuTrendingUp, LuPlus, LuSearch, LuFilter, LuX, LuCalendar, LuUser, LuTarget, LuBookmark } from "react-icons/lu";
+import { LuCode, LuPin, LuCheck, LuTrash2, LuLoader, LuTrendingUp, LuPlus, LuSearch, LuFilter, LuX, LuCalendar, LuUser, LuTarget, LuBookmark, LuArrowLeft } from "react-icons/lu";
 import { toast } from "react-hot-toast";
 
 const CodingDashboard = () => {
@@ -157,9 +157,19 @@ const CodingDashboard = () => {
           <div className="lg:col-span-1">
             <div className="bg-zinc-900/50 backdrop-blur-sm border border-gray-700 rounded-2xl p-8 sticky top-6 hover:bg-zinc-900/70 transition-all duration-300">
               <div className="flex items-center space-x-3 mb-6">
-                <div className="p-2 bg-gradient-to-r from-purple-500/20 to-blue-500/20 rounded-xl">
-                  <LuPlus className="w-6 h-6 text-purple-400" />
+                {/* Back arrow to dashboard */}
+                <div className="flex items-center justify-between mb-0.5">
+                  <button
+                    onClick={() => navigate("/dashboard")}
+                    className="p-2 rounded-xl cursor-pointer bg-zinc-800/70 border border-gray-700 hover:bg-zinc-800 transition-colors"
+                    title="Back to Dashboard"
+                    type="button"
+                  >
+                    <LuArrowLeft className="w-6 h-6 text-purple-400" />
+                  </button>
+                  <div className="h-5" />
                 </div>
+                
                 <div>
                   <h3 className="text-xl font-bold text-white">
                     Generate Coding Questions
@@ -207,7 +217,7 @@ const CodingDashboard = () => {
                         type="button"
                         key={d}
                         onClick={() => setDifficulty(d)}
-                        className={`flex-1 px-4 py-3 rounded-xl text-sm font-semibold transition-all duration-300 ${
+                        className={`flex-1 px-4 py-3 cursor-pointer rounded-xl text-sm font-semibold transition-all duration-300 ${
                           difficulty === d
                             ? "bg-white text-black shadow-lg scale-105"
                             : "bg-zinc-800/50 text-gray-300 hover:bg-zinc-700 border border-gray-600"
@@ -228,7 +238,7 @@ const CodingDashboard = () => {
                 <button
                   type="submit"
                   disabled={loading}
-                  className="w-full px-6 py-4 bg-white hover:bg-gray-100 text-black font-bold rounded-xl transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg hover:scale-105 flex items-center justify-center gap-3"
+                  className="w-full  cursor-pointer px-6 py-4 bg-white hover:bg-gray-100 text-black font-bold rounded-xl transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg hover:scale-105 flex items-center justify-center gap-3"
                 >
                   {loading ? (
                     <>
@@ -324,7 +334,7 @@ const CodingDashboard = () => {
                 <select
                   value={sortFilter}
                   onChange={(e) => setSortFilter(e.target.value)}
-                  className="bg-transparent text-white focus:outline-none"
+                  className="bg-transparent text-white focus:outline-none cursor-pointer"
                 >
                   <option value="newest" className="bg-zinc-800">Newest First</option>
                   <option value="oldest" className="bg-zinc-800">Oldest First</option>
@@ -361,7 +371,7 @@ const CodingDashboard = () => {
                       <div className="absolute top-0 right-0 flex items-center gap-2">
                         <button
                           onClick={(e) => showDeleteModal(session._id, session.topics || session.role, e)}
-                          className="p-2 text-red-400 hover:text-red-300 hover:bg-red-500/20 rounded-xl transition-all duration-300"
+                          className="p-2 text-red-400 hover:text-red-300 hover:bg-red-500/20 rounded-xl transition-all duration-300 cursor-pointer"
                         >
                           <LuTrash2 className="w-4 h-4" />
                         </button>

@@ -232,12 +232,12 @@ CRITICAL REQUIREMENTS:
 4. The solution MUST pass ALL 10 test cases when executed
 5. Test the solution logic thoroughly before providing it
 6. Include proper input parsing for the language
-7. Provide a detailed explanation with <strong>bold headings</strong> (use HTML <strong> tags) - (Mandatory point to follow)
+7. Provide a detailed explanation in this format(Problem description, Algorithm(if the solution has), Code implementation, Time and Space Complexity)- you should follow same pattern for all the questions and for all the programming languages. Use HTML <strong> tags for main headings and a single bullet point symbol '•' for list items. The structure should be: <strong>Heading 1</strong><br>• Point 1<br>• Point 2<br><strong>Heading 2</strong>... (Mandatory)
 8. Use single bullet points (•) for explanation points
 9. Include accurate time and space complexity analysis
 
 Language-specific input handling:
-- Python: Use input() or sys.stdin.read() to read from stdin, handle multiple lines properly
+- Python: Use input() or sys.stdin.read() to read from stdin, handle multiple lines properly.
 - Java: Use Scanner(System.in) or BufferedReader to read from stdin  
 - C++: Use cin or getline to read from stdin
 - C: Use scanf/fgets to read from stdin
@@ -250,11 +250,6 @@ The explanation should use HTML formatting with <strong> tags for headings and �
 `;
 
 // backend/utils/prompts.js
-// Updated prompts: removed "thankyou", added "rejection" response.
-// Improved instructions for richer, human-like emails with light personalization and options.
-;
-
-// Backend prompt utilities (e.g., utils/templatePrompts.js or wherever you keep prompts)
 
 const baseConstraints = `
 - Produce an email that feels human and personable while remaining concise and professional.
@@ -285,7 +280,6 @@ ${baseConstraints}
 
 Output format:
 Subject: <compelling subject line>
-Alt: <alternate subject line>
 Email:
 <short, confident body with a concrete value hook, 1–2 specific ties to JD, and a clear next step>
 `.trim();
@@ -301,7 +295,6 @@ ${baseConstraints}
 
 Output format:
 Subject: <clear subject line for referral ask>
-Alt: <alternate subject line>
 Email:
 <brief body that respects their time, adds credibility, and includes an easy call-to-action>
 `.trim();
@@ -323,7 +316,7 @@ ${baseConstraints}
 
 Output format:
 Subject: <polite follow-up subject>
-Alt: <alternate subject line>
+
 Email:
 <short, appreciative body that nudges a decision without pressure>
 `.trim();

@@ -20,6 +20,7 @@ import {
   LuPlus,
   LuCalendar,
   LuArrowLeft,
+  LuFileStack,
 } from "react-icons/lu";
 import { toast } from "react-hot-toast";
 
@@ -390,8 +391,8 @@ const NewOverview = () => {
             {/* Sessions Header */}
             <div className="flex items-center justify-between">
               <h3 className="text-2xl font-bold text-white flex items-center gap-3">
-                <div className="p-2 bg-gradient-to-r from-purple-500/20 to-pink-500/20 rounded-xl">
-                  <LuTarget className="w-6 h-6 text-purple-400" />
+                <div className="p-2 bg-gradient-to-r from-green-500/20 to-pink-500/20 rounded-xl">
+                  <LuFileStack className="w-6 h-6 text-green-400" />
                 </div>
                 Your Sessions
               </h3>

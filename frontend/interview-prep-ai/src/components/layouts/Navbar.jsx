@@ -52,7 +52,10 @@ const Navbar = () => {
   const [cacheBust, setCacheBust] = useState(() => Date.now());
 
   // Navbar state
-  const avatarUrl = useMemo(() => getAvatarUrl(user || {}, cacheBust), [user, cacheBust]);
+  const avatarUrl = useMemo(
+    () => getAvatarUrl(user || {}, cacheBust),
+    [user, cacheBust]
+  );
   const displayName = user?.name || "User";
 
   // Profile image change modal state
@@ -108,23 +111,36 @@ const Navbar = () => {
       const formData = new FormData();
       formData.append("image", selectedFile);
 
-      await axiosInstance.post(API_PATHS.IMAGE.UPLOAD_IMAGE, formData, {
-        headers: { "Content-Type": "multipart/form-data" },
-      });
+      const response = await axiosInstance.post(
+        API_PATHS.IMAGE.UPLOAD_IMAGE,
+        formData,
+        {
+          headers: { "Content-Type": "multipart/form-data" },
+        }
+      );
 
-      const profileRes = await axiosInstance.get(API_PATHS.AUTH.GET_PROFILE);
-      const freshUser = profileRes?.data?.user || profileRes?.data;
+      // Use the user data returned from the upload API
+      const freshUser = response.data?.user;
       if (freshUser) {
         updateUser(freshUser);
         setCacheBust(Date.now());
-        toast.success("Profile picture updated");
+        toast.success(response.data?.message || "Profile picture updated");
       } else {
+        // Fallback: fetch profile if user data not returned
+        const profileRes = await axiosInstance.get(API_PATHS.AUTH.GET_PROFILE);
+        const fallbackUser = profileRes?.data?.user || profileRes?.data;
+        if (fallbackUser) {
+          updateUser(fallbackUser);
+          setCacheBust(Date.now());
+        }
         toast.success("Image uploaded");
       }
       closeModal();
     } catch (err) {
       console.error(err);
-      toast.error("Failed to update profile picture");
+      toast.error(
+        err.response?.data?.message || "Failed to update profile picture"
+      );
     } finally {
       setUploading(false);
     }
@@ -136,17 +152,31 @@ const Navbar = () => {
       setUploading(true);
       const formData = new FormData();
       formData.append("remove", "true");
-      await axiosInstance.post(API_PATHS.IMAGE.UPLOAD_IMAGE, formData);
+      const response = await axiosInstance.post(
+        API_PATHS.IMAGE.UPLOAD_IMAGE,
+        formData
+      );
 
-      const profileRes = await axiosInstance.get(API_PATHS.AUTH.GET_PROFILE);
-      const freshUser = profileRes?.data?.user || profileRes?.data;
-      updateUser(freshUser || { ...(user || {}), profileImageUrl: "" });
-      setCacheBust(Date.now());
-      toast.success("Profile picture removed");
+      // Use the user data returned from the remove API
+      const freshUser = response.data?.user;
+      if (freshUser) {
+        updateUser(freshUser);
+        setCacheBust(Date.now());
+        toast.success(response.data?.message || "Profile picture removed");
+      } else {
+        // Fallback: fetch profile if user data not returned
+        const profileRes = await axiosInstance.get(API_PATHS.AUTH.GET_PROFILE);
+        const fallbackUser = profileRes?.data?.user || profileRes?.data;
+        updateUser(fallbackUser || { ...(user || {}), profileImageUrl: "" });
+        setCacheBust(Date.now());
+        toast.success("Profile picture removed");
+      }
       // Do not close modal automatically; user might want to choose new file after removing
     } catch (err) {
       console.error(err);
-      toast.error("Failed to remove profile picture");
+      toast.error(
+        err.response?.data?.message || "Failed to remove profile picture"
+      );
     } finally {
       setUploading(false);
     }
@@ -186,59 +216,73 @@ const Navbar = () => {
 
   return (
     <>
-      <div className="h-16 bg-black border-b border-white/10 py-2.5 px-4 md:px-6 sticky top-0 z-50">
-        <div className="max-w-7xl mx-auto flex items-center justify-between gap-4">
+      <div className="h-16 bg-black border-b border-white/10 py-2.5 px-3 sm:px-4 md:px-6 sticky top-0 z-50">
+        <div className="max-w-7xl mx-auto flex items-center justify-between gap-2 sm:gap-4">
           {/* Left: Brand */}
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2 sm:gap-3">
             <button
-              className="md:hidden inline-flex items-center justify-center w-10 h-10 rounded-lg hover:bg-white/10 text-white"
+              className="md:hidden inline-flex items-center justify-center w-9 h-9 sm:w-10 sm:h-10 rounded-lg hover:bg-white/10 text-white"
               aria-label="Open Menu"
               onClick={() => setMobileOpen(true)}
             >
-              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" className="text-white">
-                <path d="M3 6h18M3 12h18M3 18h18" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+              <svg
+                width="20"
+                height="20"
+                viewBox="0 0 24 24"
+                fill="none"
+                className="text-white sm:w-[22px] sm:h-[22px]"
+              >
+                <path
+                  d="M3 6h18M3 12h18M3 18h18"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                />
               </svg>
             </button>
             <Link to="/" className="group">
-              <h2 className="text-xl md:text-2xl font-bold text-white leading-5 transition-colors duration-300 hover:text-emerald-400">
-                Career Companion AI
+              <h2 className="text-lg sm:text-xl md:text-2xl font-bold text-white leading-5 transition-colors duration-300 hover:text-emerald-400">
+                <span className="hidden sm:inline">Career Companion AI</span>
+                <span className="sm:hidden">Career AI</span>
               </h2>
             </Link>
           </div>
 
           {/* Center: Desktop Nav */}
-          <nav className="hidden md:flex items-center gap-6 lg:gap-8">
+          <nav className="hidden md:flex items-center gap-4 lg:gap-6 xl:gap-8">
             <Link
               to="/dashboard"
-              className="text-white/85 hover:text-white transition-colors duration-300 font-medium relative group"
+              className="text-white/85 hover:text-white transition-colors duration-300 font-medium relative group text-sm lg:text-base"
             >
               Dashboard
               <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-white group-hover:w-full transition-all duration-300" />
             </Link>
             <Link
               to="/interview-prep/new"
-              className="text-white/85 hover:text-white transition-colors duration-300 font-medium relative group"
+              className="text-white/85 hover:text-white transition-colors duration-300 font-medium relative group text-sm lg:text-base"
             >
-              Interview Prep
+              <span className="hidden lg:inline">Interview Prep</span>
+              <span className="lg:hidden">Interview</span>
               <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-white group-hover:w-full transition-all duration-300" />
             </Link>
             <Link
               to="/ats-score"
-              className="text-white/85 hover:text-white transition-colors duration-300 font-medium relative group"
+              className="text-white/85 hover:text-white transition-colors duration-300 font-medium relative group text-sm lg:text-base"
             >
-              ATS Checker
+              <span className="hidden lg:inline">ATS Checker</span>
+              <span className="lg:hidden">ATS</span>
               <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-white group-hover:w-full transition-all duration-300" />
             </Link>
             <Link
               to="/coding"
-              className="text-white/85 hover:text-white transition-colors duration-300 font-medium relative group"
+              className="text-white/85 hover:text-white transition-colors duration-300 font-medium relative group text-sm lg:text-base"
             >
-              Coding 
+              Coding
               <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-white group-hover:w-full transition-all duration-300" />
             </Link>
             <Link
               to="/templates"
-              className="text-white/85 hover:text-white transition-colors duration-300 font-medium relative group"
+              className="text-white/85 hover:text-white transition-colors duration-300 font-medium relative group text-sm lg:text-base"
             >
               Templates
               <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-white group-hover:w-full transition-all duration-300" />
@@ -249,18 +293,20 @@ const Navbar = () => {
           <div className="relative" ref={profileRef}>
             <button
               onClick={() => setProfileOpen((s) => !s)}
-              className="flex items-center gap-3 rounded-xl px-2 py-1 hover:bg-white/10 transition-colors"
+              className="flex items-center gap-2 sm:gap-3 rounded-xl px-1 sm:px-2 py-1 hover:bg-white/10 transition-colors"
               title="Profile"
             >
               <img
                 key={avatarUrl} // re-mount on cache-bust change to reflect new image
                 src={avatarUrl}
                 alt="avatar"
-                className="w-10 h-10 rounded-full border border-white/20 object-cover"
+                className="w-8 h-8 sm:w-10 sm:h-10 rounded-full border border-white/20 object-cover"
               />
-              <span className="hidden sm:block text-white font-semibold">{displayName}</span>
+              <span className="hidden sm:block text-white font-semibold text-sm lg:text-base truncate max-w-20 lg:max-w-none">
+                {displayName}
+              </span>
               <svg
-                className="hidden sm:block w-4 h-4 text-white/80"
+                className="hidden sm:block w-3 h-3 sm:w-4 sm:h-4 text-white/80 flex-shrink-0"
                 viewBox="0 0 20 20"
                 fill="currentColor"
               >
@@ -271,7 +317,9 @@ const Navbar = () => {
             {profileOpen && (
               <div className="absolute right-0 mt-2 w-56 bg-zinc-900 border border-gray-700 rounded-xl shadow-xl overflow-hidden">
                 <div className="px-4 py-3 border-b border-gray-700">
-                  <div className="text-white font-semibold truncate">{displayName}</div>
+                  <div className="text-white font-semibold truncate">
+                    {displayName}
+                  </div>
                   <button
                     onClick={() => {
                       setProfileOpen(false);
@@ -307,16 +355,21 @@ const Navbar = () => {
             />
             <div
               ref={mobileRef}
-              className="w-72 max-w-[80%] h-full bg-zinc-900 border-l border-gray-700 shadow-2xl p-6 flex flex-col gap-4"
+              className="w-64 sm:w-72 max-w-[85%] sm:max-w-[80%] h-full bg-zinc-900 border-l border-gray-700 shadow-2xl p-4 sm:p-6 flex flex-col gap-3 sm:gap-4"
             >
               <div className="flex items-center justify-between mb-2">
-                <span className="text-white font-semibold text-lg">Menu</span>
+                <span className="text-white font-semibold text-base sm:text-lg">Menu</span>
                 <button
                   onClick={() => setMobileOpen(false)}
                   className="text-white/80 hover:text-white p-2 rounded-lg hover:bg-white/10"
                 >
-                  <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none">
-                    <path d="M6 18L18 6M6 6l12 12" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+                  <svg className="w-4 h-4 sm:w-5 sm:h-5" viewBox="0 0 24 24" fill="none">
+                    <path
+                      d="M6 18L18 6M6 6l12 12"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                    />
                   </svg>
                 </button>
               </div>
@@ -393,13 +446,12 @@ const Navbar = () => {
       {/* Profile image change modal */}
       {openModal && (
         <div className="fixed inset-0 z-[70] flex items-center justify-center">
-          <div
-            className="absolute inset-0 bg-black/60"
-            onClick={closeModal}
-          />
+          <div className="absolute inset-0 bg-black/60" onClick={closeModal} />
           <div className="relative w-[90%] max-w-md bg-zinc-900 border border-gray-700 rounded-2xl p-6 z-[71]">
             <div className="mb-4">
-              <h3 className="text-xl font-bold text-white">Update Profile Picture</h3>
+              <h3 className="text-xl font-bold text-white">
+                Update Profile Picture
+              </h3>
               <p className="text-gray-400 text-sm">
                 Choose a clear, square image for best results (max 5MB).
               </p>
@@ -433,13 +485,19 @@ const Navbar = () => {
                     onClick={onRemoveImage}
                     className="px-4 py-2 border border-red-500/40 text-red-300 rounded-xl hover:bg-red-500/10 transition-colors"
                     disabled={uploading || !user?.profileImageUrl}
-                    title={user?.profileImageUrl ? "Remove current photo" : "No photo to remove"}
+                    title={
+                      user?.profileImageUrl
+                        ? "Remove current photo"
+                        : "No photo to remove"
+                    }
                   >
                     Remove
                   </button>
                 </div>
                 {selectedFile && (
-                  <p className="text-xs text-gray-500 mt-2">Selected: {selectedFile.name}</p>
+                  <p className="text-xs text-gray-500 mt-2">
+                    Selected: {selectedFile.name}
+                  </p>
                 )}
               </div>
             </div>
@@ -467,7 +525,10 @@ const Navbar = () => {
       {/* Logout confirm modal */}
       {showLogoutConfirm && (
         <div className="fixed inset-0 z-[80] flex items-center justify-center">
-          <div className="absolute inset-0 bg-black/60" onClick={() => setShowLogoutConfirm(false)} />
+          <div
+            className="absolute inset-0 bg-black/60"
+            onClick={() => setShowLogoutConfirm(false)}
+          />
           <div className="relative w-[90%] max-w-sm bg-zinc-900 border border-gray-700 rounded-2xl p-6 z-[81]">
             <h3 className="text-lg font-bold text-white mb-2">Logout</h3>
             <p className="text-gray-300 mb-5">Are you sure want to log out?</p>

@@ -9,20 +9,21 @@ import {
   LuTrophy,
   LuCalendar,
   LuUser,
-  LuTarget,
   LuBookOpen,
   LuStar,
   LuChevronDown,
   LuChevronUp,
   LuPlus,
   LuArrowLeft,
+  LuBrainCog,
+  LuScrollText,
 } from "react-icons/lu";
 import SpinnerLoader from "../../components/Loader/SpinnerLoader";
 import { toast } from "react-hot-toast";
 import DashboardLayout from "../../components/layouts/DashboardLayout";
 import axiosInstance from "../../utils/axiosInstance";
 import { API_PATHS } from "../../utils/apiPaths";
-import Drawer from "../../components/Drawer";
+import Drawer from "./components/Drawer";
 import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
 import { vscDarkPlus } from "react-syntax-highlighter/dist/esm/styles/prism";
 
@@ -437,7 +438,7 @@ const InterviewPrep = () => {
                       <LuArrowLeft className="w-6 h-6 text-blue-400" />
                     </button>
                     <div className="p-3 bg-gradient-to-r from-blue-500/20 to-purple-500/20 rounded-xl border border-blue-500/20">
-                      <LuTarget className="w-7 h-7 text-blue-400" />
+                      <LuBrainCog className="w-7 h-7 text-blue-400" />
                     </div>
                     <div>
                       <h1 className="text-2xl sm:text-3xl font-bold text-white leading-tight">
@@ -474,7 +475,7 @@ const InterviewPrep = () => {
                 {/* Focus areas */}
                 <div className="mb-4">
                   <div className="flex items-center gap-2 mb-2">
-                    <LuBookOpen className="w-5 h-5 text-gray-400" />
+                    <LuScrollText className="w-5 h-5 text-gray-400" />
                     <span className="text-gray-400 font-medium">
                       Focus Areas
                     </span>
@@ -556,7 +557,7 @@ const InterviewPrep = () => {
                 <div className="bg-zinc-900/50 border border-gray-700 rounded-2xl p-4 hover:bg-zinc-800/70 transition-all flex flex-col justify-center">
                   <div className="text-lg text-gray-400 mb-4">
                     Load more questions
-                  </div>
+                  </div>     
                   <button
                     onClick={uploadMoreQuestions}
                     disabled={isUpdateLoader}
@@ -648,7 +649,7 @@ const InterviewPrep = () => {
                   {/* Compact Question Card */}
                   <div className="bg-zinc-900/50 backdrop-blur-sm border border-gray-700 rounded-2xl p-4 hover:bg-zinc-900/70 transition-all duration-300">
                     <div className="flex items-start justify-between mb-2">
-                      <div className="flex-1 pr-3">
+                      <div className="flex-1 pr-3  cursor-pointer">
                         <h3 className="text-base font-semibold text-white mb-2 leading-snug">
                           {data?.question}
                         </h3>
@@ -657,7 +658,7 @@ const InterviewPrep = () => {
                       <div className="flex items-center space-x-2 flex-shrink-0">
                         <button
                           onClick={() => toggleQuestionPinStatus(data._id)}
-                          className={`p-2 rounded-xl transition-all duration-300 ${
+                          className={`p-2 rounded-xl transition-all duration-300  cursor-pointer ${
                             data?.isPinned
                               ? "bg-amber-500/20 text-amber-400 border border-amber-500/20"
                               : "bg-gray-700/50 text-gray-400 hover:bg-amber-500/20 hover:text-amber-400 border border-gray-600"
@@ -673,7 +674,7 @@ const InterviewPrep = () => {
                           onClick={() =>
                             generateConceptExplanation(data.question, data._id)
                           }
-                          className="p-2 rounded-xl bg-purple-500/20 text-purple-400 hover:bg-purple-500/30 border border-purple-500/20 transition-all duration-300"
+                          className="p-2 rounded-xl bg-purple-500/20 text-purple-400 hover:bg-purple-500/30 border border-purple-500/20 transition-all duration-300 cursor-pointer"
                           title="Learn More"
                         >
                           <LuBookOpen className="w-4 h-4" />
@@ -681,7 +682,7 @@ const InterviewPrep = () => {
 
                         <button
                           onClick={() => toggleQuestionExpansion(data._id)}
-                          className="p-2 rounded-xl bg-emerald-500/20 text-emerald-400 hover:bg-emerald-500/30 border border-emerald-500/20 transition-all duration-300"
+                          className="p-2 rounded-xl bg-emerald-500/20 text-emerald-400 hover:bg-emerald-500/30 border border-emerald-500/20 transition-all duration-300 cursor-pointer"
                           title={
                             expandedQuestions.has(data._id)
                               ? "Hide Answer"

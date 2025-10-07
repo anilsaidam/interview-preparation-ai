@@ -77,7 +77,7 @@ const ATSSavedReports = () => {
             <div className="flex items-start gap-4">
               <button
                 onClick={() => navigate('/ats-score')}
-                className="p-3 hover:bg-gray-700 rounded-xl transition-colors text-gray-400 hover:text-white"
+                className="p-3 hover:bg-gray-700 rounded-xl transition-colors text-gray-400 hover:text-white cursor-pointer"
               >
                 <LuArrowLeft className="text-xl" />
               </button>
@@ -181,7 +181,7 @@ const ATSSavedReports = () => {
                     <div className="flex gap-3">
                       <button
                         onClick={() => downloadReport(report._id, report.originalFileName)}
-                        className="flex-1 flex items-center justify-center gap-2 px-4 py-3 bg-white hover:bg-gray-100 text-black font-semibold rounded-xl transition-all duration-300 hover:scale-105 shadow-lg"
+                        className="flex-1 flex items-center cursor-pointer justify-center gap-2 px-4 py-3 bg-white hover:bg-gray-100 text-black font-semibold rounded-xl transition-all duration-300 hover:scale-105 shadow-lg"
                       >
                         <LuDownload className="w-4 h-4" />
                         <span className="hidden sm:inline">Download</span>
@@ -189,7 +189,7 @@ const ATSSavedReports = () => {
                       
                       <button
                         onClick={() => deleteReport(report._id)}
-                        className="flex items-center justify-center px-4 py-3 bg-red-500/20 hover:bg-red-500/30 text-red-400 hover:text-red-300 border border-red-500/20 hover:border-red-500/30 rounded-xl transition-all duration-300 hover:scale-105"
+                        className="flex cursor-pointer items-center justify-center px-4 py-3 bg-red-500/20 hover:bg-red-500/30 text-red-400 hover:text-red-300 border border-red-500/20 hover:border-red-500/30 rounded-xl transition-all duration-300 hover:scale-105"
                       >
                         <LuTrash2 className="w-4 h-4" />
                       </button>
@@ -219,7 +219,7 @@ const ATSSavedReports = () => {
                 </p>
                 <button
                   onClick={() => navigate('/ats-score')}
-                  className="inline-flex items-center gap-3 px-8 py-4 bg-blue-700 text-white font-bold rounded-xl transition-all duration-300 shadow-lg hover:scale-105"
+                  className="inline-flex  cursor-pointer items-center gap-3 px-8 py-4 bg-blue-700 text-white font-bold rounded-xl transition-all duration-300 shadow-lg hover:scale-105"
                 >
                   <LuTarget className="w-5 h-5" />
                   Analyze New Resume

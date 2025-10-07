@@ -1,10 +1,8 @@
-// server/controllers/templatesController.js
-// Rewritten using atsController patterns: robust parsing, clear errors, and safe AI handling
-
 const path = require("path");
 const { GoogleGenerativeAI } = require("@google/generative-ai");
 const Template = require("../models/Template");
 const { buildTemplatePrompt } = require("../utils/prompts");
+const axios = require("axios"); // Added import for axios
 
 // Initialize AI client
 const ai = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
@@ -27,19 +25,26 @@ const pickResumeFromReq = (req) => {
   return null;
 };
 
+// FIX: Removed the explicit file type check to allow all files
 const extractTxtHighlights = async (file) => {
   try {
     if (!file || !file.buffer) return "";
+    
+    // Check if the file is likely plain text
     const isText =
       (file.mimetype && file.mimetype.startsWith("text/")) ||
       (file.originalname || "").toLowerCase().endsWith(".txt");
+      
+    if (isText) {
+        const text = file.buffer.toString("utf-8");
+        return text.slice(0, 1500).replace(/\s+/g, " ").trim();
+    } else {
+        // For non-text files, we currently can't extract highlights.
+        // We can either return an empty string or provide a placeholder.
+        return ""; 
+    }
 
-    if (!isText) return ""; // keep simple: no parsing of PDFs/DOCs here
-
-    const text = file.buffer.toString("utf-8");
-    return text.slice(0, 1500).replace(/\s+/g, " ").trim();
   } catch (err) {
-    // fail open; highlights are optional
     return "";
   }
 };
@@ -337,6 +342,42 @@ exports.deleteTemplate = async (req, res) => {
     console.error("[ERROR] Delete template:", error);
     return res.status(500).json({
       message: "Failed to delete template",
+      error: error.message,
+    });
+  }
+};
+
+// Add new endpoint for getting session statistics
+exports.getCodingStats = async (req, res) => {
+  try {
+    const userId = req.user._id;
+
+    const totalSessions = await CodingSession.countDocuments({ user: userId });
+    const activeSessions = await CodingSession.countDocuments({
+      user: userId,
+      questions: { $exists: true, $not: { $size: 0 } },
+    });
+    const completedSessions = await CodingSession.countDocuments({
+      user: userId,
+      completed: true,
+    });
+
+    // Calculate total pinned questions across all sessions
+    const sessions = await CodingSession.find({ user: userId });
+    const totalPinnedQuestions = sessions.reduce((total, session) => {
+      return total + (session.questions?.filter((q) => q.pinned)?.length || 0);
+    }, 0);
+
+    return res.status(200).json({
+      totalSessions,
+      activeSessions,
+      completedSessions,
+      totalPinnedQuestions,
+      successStreak: completedSessions,
+    });
+  } catch (error) {
+    return res.status(500).json({
+      message: "Failed to get statistics",
       error: error.message,
     });
   }

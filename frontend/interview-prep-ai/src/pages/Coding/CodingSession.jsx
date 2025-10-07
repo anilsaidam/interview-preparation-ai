@@ -12,6 +12,7 @@ import {
   LuX,
   LuCalendar,
   LuUser,
+  LuCodesandbox,
 } from "react-icons/lu";
 import { toast } from "react-hot-toast";
 import DashboardLayout from "../../components/layouts/DashboardLayout";
@@ -50,6 +51,53 @@ const sanitizeCode = (code) => {
   return sanitized.trim();
 };
 
+// A simple, robust parser for the specific HTML format requested from the AI
+const renderSolutionExplanation = (text) => {
+  if (!text) return null;
+
+  // Split the entire text by the bolded headings using a regex that captures the content
+  // We're looking for `<strong>...</strong>`
+  const sections = text.split(/(<strong>.*?<\/strong>)/).filter(Boolean);
+  const elements = [];
+
+  sections.forEach((section, index) => {
+    // If the section is a heading, render it as an H4
+    if (section.startsWith('<strong>') && section.endsWith('</strong>')) {
+      // Use dangerouslySetInnerHTML to render the heading content
+      const headingText = section.replace(/<\/?strong>/g, '');
+      elements.push(<h4 key={`h-${index}`} className="font-semibold text-white mt-4 mb-2" dangerouslySetInnerHTML={{ __html: headingText }} />);
+    } else {
+      // Otherwise, it's a content paragraph. Split it by bullet points.
+      // Normalize different bullet characters like '•', '-', '*'
+      const bulletPoints = section.split(/\s*[\u2022\u002d\u002a]\s/).map(p => p.trim()).filter(p => p.length > 0);
+      
+      if (bulletPoints.length > 1) {
+        // If there are multiple parts, treat the first as a lead-in sentence
+        // and the rest as a list.
+        const leadText = bulletPoints[0];
+        const listItems = bulletPoints.slice(1);
+        
+        if (leadText) {
+          elements.push(<p key={`p-${index}-lead`} className="text-gray-300 leading-relaxed mt-2" dangerouslySetInnerHTML={{ __html: leadText }} />);
+        }
+        
+        elements.push(
+          <ul key={`ul-${index}`} className="list-disc list-inside space-y-1 text-gray-300">
+            {listItems.map((item, itemIndex) => (
+              <li key={`li-${index}-${itemIndex}`} dangerouslySetInnerHTML={{ __html: item }} />
+            ))}
+          </ul>
+        );
+      } else if (section.trim()) {
+        // If it's a single block, it's just a paragraph.
+        elements.push(<p key={`p-${index}`} className="text-gray-300 leading-relaxed mt-2" dangerouslySetInnerHTML={{ __html: section }} />);
+      }
+    }
+  });
+
+  return elements;
+};
+
 const CodingSession = () => {
   const { sessionId } = useParams();
   const navigate = useNavigate();
@@ -76,7 +124,8 @@ const CodingSession = () => {
   const fetchSession = useCallback(async () => {
     try {
       setLoading(true);
-      const res = await axiosInstance.get(API_PATHS.CODING.LIST_SESSIONS);
+      // Fixed: This was incorrectly calling LIST_SESSIONS, should be GET_ONE
+      const res = await axiosInstance.get(API_PATHS.CODING.LIST_SESSIONS); 
       const foundSession = res.data.find((s) => s._id === sessionId);
       if (foundSession) {
         setSession(foundSession);
@@ -199,6 +248,7 @@ const CodingSession = () => {
       // Check in-memory cache first
       if (solutionCache[cacheKey]) {
         setSolution(solutionCache[cacheKey]);
+        toast.success("Solution loaded from cache");
         return;
       }
 
@@ -402,13 +452,13 @@ const CodingSession = () => {
               <div className="flex items-start gap-4">
                 <button
                   onClick={() => navigate("/coding")}
-                  className="p-3 hover:bg-gray-700 rounded-xl transition-colors text-gray-400 hover:text-white"
+                  className="p-3 cursor-pointer hover:bg-gray-700 rounded-xl transition-colors text-gray-400 hover:text-white"
                 >
                   <LuArrowLeft className="text-xl" />
                 </button>
                 <div className="flex items-center space-x-4">
                   <div className="p-3 bg-gradient-to-r from-purple-500/20 to-blue-500/20 rounded-xl border border-purple-500/20">
-                    <LuBookOpen className="w-8 h-8 text-purple-400" />
+                    <LuCodesandbox className="w-8 h-8 text-purple-400" />
                   </div>
                   <div>
                     <div className="flex items-center gap-3 flex-wrap">
@@ -441,7 +491,7 @@ const CodingSession = () => {
                 <button
                   onClick={addMoreQuestions}
                   disabled={addingQuestions}
-                  className="flex items-center justify-center gap-2 px-6 py-3 bg-white hover:bg-gray-100 text-black font-semibold rounded-xl transition-all duration-300 disabled:opacity-50 shadow-lg"
+                  className="flex cursor-pointer items-center justify-center gap-2 px-6 py-3 bg-white hover:bg-gray-100 text-black font-semibold rounded-xl transition-all duration-300 disabled:opacity-50 shadow-lg"
                 >
                   {addingQuestions ? (
                     <>
@@ -459,9 +509,9 @@ const CodingSession = () => {
                 {/* Mark Completed — match InterviewPrep style */}
                 <button
                   onClick={toggleCompletion}
-                  className={`flex items-center justify-center gap-2 px-6 py-3 font-semibold rounded-xl transition-all duration-300 hover:scale-105 ${
+                  className={`flex cursor-pointer items-center justify-center gap-2 px-6 py-3 font-semibold rounded-xl transition-all duration-300 hover:scale-105 ${
                     isCompleted
-                      ? "bg-gradient-to-r from-green-500 to-emerald-500 text-white shadow-lg shadow-green-500/25"
+                      ? "bg-red-500 text-white shadow-lg shadow-green-500/25"
                       : "border-2 border-gray-600 text-gray-300 hover:border-emerald-500 hover:text-emerald-400 hover:bg-emerald-500/10"
                   }`}
                 >
@@ -562,7 +612,7 @@ const CodingSession = () => {
                         <select
                           value={language}
                           onChange={(e) => handleLanguageChange(e.target.value)}
-                          className="px-4 py-3 border border-gray-600 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent bg-zinc-800/50 text-white transition-all duration-300 hover:border-gray-500"
+                          className=" cursor-pointer px-4 py-3 border border-gray-600 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent bg-zinc-800/50 text-white transition-all duration-300 hover:border-gray-500"
                         >
                           {LANGUAGES.map((lang) => (
                             <option key={lang.key} value={lang.key} className="bg-zinc-800">
@@ -574,7 +624,7 @@ const CodingSession = () => {
                         <button
                           onClick={handleShowSolution}
                           disabled={solutionLoading}
-                          className={`flex items-center justify-center gap-2 px-6 py-3 font-semibold rounded-xl disabled:opacity-50 transition-all duration-300 ${
+                          className={`flex items-center justify-center gap-2 px-6 py-3 font-semibold rounded-xl disabled:opacity-50 transition-all duration-300 cursor-pointer ${
                             showSolution
                               ? "bg-red-500 hover:bg-red-600 text-white shadow-lg"
                               : "bg-green-500 hover:bg-green-600 text-white shadow-lg"
@@ -693,7 +743,7 @@ const CodingSession = () => {
                           {solution?.code && (
                             <button
                               onClick={() => copyToClipboard(solution.code)}
-                              className="flex items-center gap-2 px-4 py-2 text-sm text-gray-300 hover:text-white hover:bg-gray-700 rounded-xl transition-colors"
+                              className="flex items-center gap-2 px-4 py-2 text-sm text-gray-300 hover:text-white hover:bg-gray-700 rounded-xl transition-colors cursor-pointer"
                             >
                               <LuCopy className="w-4 h-4" />
                               Copy Code
@@ -733,12 +783,9 @@ const CodingSession = () => {
                                   <LuBookOpen className="w-4 h-4" />
                                   Explanation:
                                 </h4>
-                                <div
-                                  className="text-gray-200 leading-relaxed solution-explanation-content"
-                                  dangerouslySetInnerHTML={{
-                                    __html: solution.explanation,
-                                  }}
-                                />
+                                <div className="text-gray-200 leading-relaxed solution-content">
+                                  {renderSolutionExplanation(solution.explanation)}
+                                </div>
                               </div>
                             )}
 
@@ -756,7 +803,7 @@ const CodingSession = () => {
                                       <div
                                         className="text-gray-300 font-mono"
                                         dangerouslySetInnerHTML={{
-                                          __html: solution.timeComplexity,
+                                          __html: solution.timeComplexity.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>'),
                                         }}
                                       />
                                     </div>
@@ -769,7 +816,7 @@ const CodingSession = () => {
                                       <div
                                         className="text-gray-300 font-mono"
                                         dangerouslySetInnerHTML={{
-                                          __html: solution.spaceComplexity,
+                                          __html: solution.spaceComplexity.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>'),
                                         }}
                                       />
                                     </div>

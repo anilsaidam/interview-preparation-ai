@@ -30,8 +30,9 @@ const TEMPLATE_TYPES = [
 ];
 
 const initialStats = { totalGenerated: 0, savedTemplates: 0 };
-const LS_KEY = "templateGenState:v4";
+const LS_KEY = "templateGenState:v5";
 const SESSION_FLAG = "templateGen_current_session";
+const STATS_KEY = "templateGen_persistent_stats"; // Separate key for persistent stats
 
 const TemplateGenerator = () => {
   const navigate = useNavigate();
@@ -64,57 +65,101 @@ const TemplateGenerator = () => {
     );
   }, [type, targetRole, yoe, jd, resumeFile, template]);
 
+  // Fetch saved templates count from library
+  const fetchSavedTemplatesCount = async () => {
+    try {
+      const res = await axiosInstance.get(API_PATHS.TEMPLATES.MY_LIBRARY);
+      const templates = res.data?.templates || [];
+      return templates.length;
+    } catch (error) {
+      console.error("Failed to fetch saved templates count:", error);
+      return 0;
+    }
+  };
+
+  // Load persistent stats (separate from form data)
+  const loadPersistentStats = async () => {
+    try {
+      const persistentStats = JSON.parse(localStorage.getItem(STATS_KEY) || "{}");
+      const savedTemplatesCount = await fetchSavedTemplatesCount();
+      return {
+        totalGenerated: persistentStats.totalGenerated || 0,
+        savedTemplates: savedTemplatesCount
+      };
+    } catch {
+      const savedTemplatesCount = await fetchSavedTemplatesCount();
+      return { ...initialStats, savedTemplates: savedTemplatesCount };
+    }
+  };
+
+  // Save persistent stats (separate from form data)
+  const savePersistentStats = (stats) => {
+    try {
+      localStorage.setItem(STATS_KEY, JSON.stringify({
+        totalGenerated: stats.totalGenerated
+      }));
+    } catch {}
+  };
+
   // On mount: check if same session or new navigation
   useEffect(() => {
     const currentSession = sessionStorage.getItem(SESSION_FLAG);
     const isNewNavigation = !currentSession;
 
-    if (isNewNavigation) {
-      // Fresh navigation from another page: reset everything
-      sessionStorage.setItem(SESSION_FLAG, Date.now().toString());
-      setType("cold");
-      setTargetRole("");
-      setYoe("");
-      setJd("");
-      setResumeFile(null);
-      setTemplate("");
-      setStats(initialStats);
-      setErrors({});
-      setCopied(false);
-      
-      // Load only stats from localStorage (preserve cumulative counts)
-      try {
-        const saved = JSON.parse(localStorage.getItem(LS_KEY) || "{}");
-        if (saved.stats && typeof saved.stats === "object") {
-          setStats(saved.stats);
-        }
-      } catch {}
-    } else {
-      // Same session (refresh): restore everything
-      try {
-        const saved = JSON.parse(localStorage.getItem(LS_KEY) || "{}");
-        if (saved.type) setType(saved.type);
-        if (saved.targetRole) setTargetRole(saved.targetRole);
-        if (saved.yoe) setYoe(saved.yoe);
-        if (saved.jd) setJd(saved.jd);
-        if (saved.stats && typeof saved.stats === "object") setStats(saved.stats);
-        if (saved.template) setTemplate(saved.template);
-      } catch {}
-    }
+    const initializeComponent = async () => {
+      // Always load persistent stats regardless of navigation type
+      const persistentStats = await loadPersistentStats();
+      setStats(persistentStats);
+
+      if (isNewNavigation) {
+        // Fresh navigation from another page: reset form but keep stats
+        sessionStorage.setItem(SESSION_FLAG, Date.now().toString());
+        setType("cold");
+        setTargetRole("");
+        setYoe("");
+        setJd("");
+        setResumeFile(null);
+        setTemplate("");
+        setErrors({});
+        setCopied(false);
+        
+        // Clear only form data from localStorage, keep stats separate
+        try {
+          localStorage.setItem(LS_KEY, JSON.stringify({ 
+            type: "cold", 
+            targetRole: "", 
+            yoe: "", 
+            jd: "", 
+            template: "" 
+          }));
+        } catch {}
+      } else {
+        // Same session (refresh): restore form data
+        try {
+          const saved = JSON.parse(localStorage.getItem(LS_KEY) || "{}");
+          if (saved.type) setType(saved.type);
+          if (saved.targetRole) setTargetRole(saved.targetRole);
+          if (saved.yoe) setYoe(saved.yoe);
+          if (saved.jd) setJd(saved.jd);
+          if (saved.template) setTemplate(saved.template);
+        } catch {}
+      }
+    };
     
+    initializeComponent();
     isMountedRef.current = true;
   }, []);
 
-  // Persist to localStorage on state change
+  // Persist form data to localStorage on state change (separate from stats)
   useEffect(() => {
     if (!isMountedRef.current) return;
     try {
       localStorage.setItem(
         LS_KEY,
-        JSON.stringify({ type, targetRole, yoe, jd, stats, template })
+        JSON.stringify({ type, targetRole, yoe, jd, template })
       );
     } catch {}
-  }, [type, targetRole, yoe, jd, stats, template]);
+  }, [type, targetRole, yoe, jd, template]);
 
   const validate = () => {
     const next = {};
@@ -169,17 +214,14 @@ const TemplateGenerator = () => {
         toast.error("No template received. Please try again.");
       } else {
         setTemplate(out.trim());
-        // Increment totalGenerated properly
+        // Increment totalGenerated properly and persist separately
         setStats((prevStats) => {
-          const newStats = { 
-            ...prevStats, 
-            totalGenerated: (prevStats.totalGenerated || 0) + 1 
+          const newStats = {
+            ...prevStats,
+            totalGenerated: (prevStats.totalGenerated || 0) + 1,
           };
-          // Persist immediately
-          try {
-            const current = JSON.parse(localStorage.getItem(LS_KEY) || "{}");
-            localStorage.setItem(LS_KEY, JSON.stringify({ ...current, stats: newStats }));
-          } catch {}
+          // Persist stats separately
+          savePersistentStats(newStats);
           return newStats;
         });
         toast.success("Template generated");
@@ -189,7 +231,9 @@ const TemplateGenerator = () => {
       if (err.response?.status === 502) {
         toast.error("AI service temporarily unavailable. Try again later.");
       } else {
-        toast.error(err.response?.data?.message || "Failed to generate template");
+        toast.error(
+          err.response?.data?.message || "Failed to generate template"
+        );
       }
     } finally {
       setLoading(false);
@@ -223,17 +267,19 @@ const TemplateGenerator = () => {
       };
       const res = await axiosInstance.post(API_PATHS.TEMPLATES.SAVE, payload);
       if (res.data?.success) {
-        setStats((prevStats) => {
-          const newStats = {
-            ...prevStats,
-            savedTemplates: (prevStats.savedTemplates || 0) + 1
-          };
-          try {
-            const current = JSON.parse(localStorage.getItem(LS_KEY) || "{}");
-            localStorage.setItem(LS_KEY, JSON.stringify({ ...current, stats: newStats }));
-          } catch {}
-          return newStats;
-        });
+        // Refresh saved templates count from API
+        const refreshSavedCount = async () => {
+          const savedTemplatesCount = await fetchSavedTemplatesCount();
+          setStats((prevStats) => {
+            const newStats = {
+              ...prevStats,
+              savedTemplates: savedTemplatesCount,
+            };
+            // No need to persist saved count as it's fetched from API
+            return newStats;
+          });
+        };
+        refreshSavedCount();
         toast.success(res.data?.message || "Template saved to library");
       } else {
         toast.success("Template saved");
@@ -260,16 +306,14 @@ const TemplateGenerator = () => {
     setErrors({});
     setCopied(false);
     try {
-      const saved = JSON.parse(localStorage.getItem(LS_KEY) || "{}");
       localStorage.setItem(
         LS_KEY,
-        JSON.stringify({ 
-          ...saved, 
-          type: "cold", 
-          targetRole: "", 
-          yoe: "", 
-          jd: "", 
-          template: "" 
+        JSON.stringify({
+          type: "cold",
+          targetRole: "",
+          yoe: "",
+          jd: "",
+          template: "",
         })
       );
     } catch {}
@@ -284,27 +328,28 @@ const TemplateGenerator = () => {
   return (
     <DashboardLayout>
       <div className="min-h-screen bg-black">
-        <div className="max-w-7xl mx-auto px-6 lg:px-8 py-8">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-6 lg:py-8">
           {/* Header */}
-          <div className="bg-zinc-900/50 border border-gray-800 rounded-2xl p-6 lg:p-8 mb-8">
-            <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
-              <div className="flex items-center gap-4">
+          <div className="bg-zinc-900/50 border border-gray-800 rounded-2xl p-4 sm:p-6 lg:p-8 mb-6 lg:mb-8">
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 sm:gap-6">
+              <div className="flex items-center gap-3 sm:gap-4">
                 <button
                   onClick={() => navigate("/dashboard")}
-                  className="p-3 rounded-xl bg-zinc-800/70 border border-gray-700 hover:bg-zinc-800 transition-colors"
+                  className="p-2 sm:p-3 rounded-xl bg-zinc-800/70 border border-gray-700 hover:bg-zinc-800 transition-colors cursor-pointer"
                   title="Back to Dashboard"
                 >
-                  <LuArrowLeft className="w-6 h-6 text-emerald-400" />
+                  <LuArrowLeft className="w-5 h-5 sm:w-6 sm:h-6 text-emerald-400" />
                 </button>
-                <div className="p-3 bg-emerald-500/15 rounded-xl border border-emerald-500/20">
-                  <LuSparkles className="w-7 h-7 text-emerald-400" />
+                <div className="p-2 sm:p-3 bg-emerald-500/15 rounded-xl border border-emerald-500/20">
+                  <LuMail className="w-6 h-6 sm:w-7 sm:h-7 text-emerald-400" />
                 </div>
                 <div>
-                  <h1 className="text-3xl lg:text-4xl font-extrabold text-white tracking-tight">
+                  <h1 className="text-2xl sm:text-3xl lg:text-4xl font-extrabold text-white tracking-tight">
                     AI Email Template Generator
                   </h1>
-                  <p className="text-gray-400 mt-1">
-                    Generate professional emails for cold outreach, referrals, and follow-ups.
+                  <p className="text-gray-400 mt-1 text-sm sm:text-base">
+                    Generate professional emails for cold outreach, referrals,
+                    and follow-ups.
                   </p>
                 </div>
               </div>
@@ -312,37 +357,47 @@ const TemplateGenerator = () => {
               <div className="flex items-center gap-3">
                 <button
                   onClick={() => navigate("/templates/mylibrary")}
-                  className="px-5 py-3 bg-zinc-800/50 text-gray-200 border border-gray-700 rounded-xl hover:bg-zinc-800 transition-colors duration-300 flex items-center gap-2"
+                  className="px-4 sm:px-5 py-2 sm:py-3 bg-zinc-800/50 text-gray-200 border border-gray-700 rounded-xl hover:bg-zinc-800 transition-colors duration-300 flex items-center gap-2 cursor-pointer text-sm sm:text-base"
                 >
-                  <LuFolderOpen className="w-5 h-5 text-blue-300" />
+                  <LuFolderOpen className="w-4 h-4 sm:w-5 sm:h-5 text-blue-300" />
                   <span>My Library</span>
                 </button>
               </div>
             </div>
 
-            {/* Trackers: Only 2 trackers now */}
-            <div className="grid grid-cols-2 gap-4 mt-8">
-              <div className="relative group rounded-2xl border border-gray-800 bg-black/30 overflow-hidden h-28">
-                <div className="absolute inset-0 bg-emerald-500/0 group-hover:bg-emerald-500/5 transition-colors duration-300" />
-                <div className="relative h-full px-5 py-4 flex flex-col justify-between">
-                  <div className="text-xs uppercase tracking-wide text-gray-400">Total Generated</div>
-                  <div className="flex items-center justify-between">
-                    <div className="text-3xl font-extrabold text-white">{stats.totalGenerated || 0}</div>
-                    <div className="p-2 rounded-lg bg-emerald-500/10 border border-emerald-500/20">
-                      <LuBarcode className="w-5 h-5 text-emerald-400" />
+            {/* Trackers: Only 2 trackers now - 60% narrower and responsive */}
+            <div className="flex mt-8">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 w-full max-w-2xl px-4 sm:px-0">
+                <div className="relative group rounded-2xl border border-gray-800 bg-black/30 overflow-hidden h-28">
+                  <div className="absolute inset-0 bg-emerald-500/0 group-hover:bg-emerald-500/5 transition-colors duration-300" />
+                  <div className="relative h-full px-3 py-4 flex flex-col justify-between">
+                    <div className="text-xs uppercase tracking-wide text-gray-400">
+                      Total Generated
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <div className="text-2xl font-extrabold text-white">
+                        {stats.totalGenerated || 0}
+                      </div>
+                      <div className="p-2 rounded-lg bg-emerald-500/10 border border-emerald-500/20">
+                        <LuSparkles className="w-4 h-4 text-emerald-400" />
+                      </div>
                     </div>
                   </div>
                 </div>
-              </div>
 
-              <div className="relative group rounded-2xl border border-gray-800 bg-black/30 overflow-hidden h-28">
-                <div className="absolute inset-0 bg-blue-500/0 group-hover:bg-blue-500/5 transition-colors duration-300" />
-                <div className="relative h-full px-5 py-4 flex flex-col justify-between">
-                  <div className="text-xs uppercase tracking-wide text-gray-400">Saved Templates</div>
-                  <div className="flex items-center justify-between">
-                    <div className="text-3xl font-extrabold text-white">{stats.savedTemplates || 0}</div>
-                    <div className="p-2 rounded-lg bg-blue-500/10 border border-blue-500/20">
-                      <LuFileText className="w-5 h-5 text-blue-300" />
+                <div className="relative group rounded-2xl border border-gray-800 bg-black/30 overflow-hidden h-28">
+                  <div className="absolute inset-0 bg-blue-500/0 group-hover:bg-blue-500/5 transition-colors duration-300" />
+                  <div className="relative h-full px-3 py-4 flex flex-col justify-between">
+                    <div className="text-xs uppercase tracking-wide text-gray-400">
+                      Saved Templates
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <div className="text-2xl font-extrabold text-white">
+                        {stats.savedTemplates || 0}
+                      </div>
+                      <div className="p-2 rounded-lg bg-blue-500/10 border border-blue-500/20">
+                        <LuFileText className="w-4 h-4 text-blue-300" />
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -350,25 +405,27 @@ const TemplateGenerator = () => {
             </div>
           </div>
 
-          {/* Main two-column content */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+          {/* Main two-column content - responsive */}
+          <div className="grid grid-cols-1 xl:grid-cols-2 gap-6 lg:gap-8">
             {/* Left: Form card */}
-            <div className="bg-zinc-900/50 border border-gray-800 rounded-2xl p-6 lg:p-8">
-              <div className="flex items-center justify-between mb-6">
-                <div className="flex items-center gap-3">
+            <div className="bg-zinc-900/50 border border-gray-800 rounded-2xl p-4 sm:p-6 lg:p-8 order-1 xl:order-1">
+              <div className="flex items-center justify-between mb-4 sm:mb-6">
+                <div className="flex items-center gap-2 sm:gap-3">
                   <div className="p-2 bg-zinc-800/70 rounded-xl border border-gray-700">
-                    <LuTarget className="w-5 h-5 text-emerald-300" />
+                    <LuTarget className="w-4 h-4 sm:w-5 sm:h-5 text-emerald-300" />
                   </div>
-                  <h2 className="text-xl font-bold text-white">Template Details</h2>
+                  <h2 className="text-lg sm:text-xl font-bold text-white">
+                    Template Details
+                  </h2>
                 </div>
 
                 {hasAnyInput && (
                   <button
                     onClick={onClear}
-                    className="inline-flex items-center gap-2 px-3 py-2 rounded-lg border border-gray-700 text-gray-200 hover:bg-zinc-800 transition-colors"
+                    className="inline-flex items-center gap-2 px-2 sm:px-3 py-2 rounded-lg border border-gray-700 text-gray-200 hover:bg-zinc-800 transition-colors cursor-pointer text-sm"
                     title="Clear"
                   >
-                    <LuRotateCcw className="w-4 h-4 text-red-300" />
+                    <LuRotateCcw className="w-3 h-3 sm:w-4 sm:h-4 text-red-300" />
                     <span>Clear</span>
                   </button>
                 )}
@@ -377,7 +434,9 @@ const TemplateGenerator = () => {
               <div className="space-y-5">
                 {/* Type */}
                 <div>
-                  <label className="block text-sm text-gray-300 mb-2">Template Type</label>
+                  <label className="block text-sm text-gray-300 mb-2">
+                    Template Type
+                  </label>
                   <div className="relative">
                     <select
                       value={type}
@@ -385,7 +444,11 @@ const TemplateGenerator = () => {
                       className="w-full appearance-none px-4 py-3 bg-black/40 text-white border border-gray-700 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-transparent pr-10"
                     >
                       {TEMPLATE_TYPES.map((t) => (
-                        <option key={t.value} className="bg-zinc-900" value={t.value}>
+                        <option
+                          key={t.value}
+                          className="bg-zinc-900"
+                          value={t.value}
+                        >
                           {t.label}
                         </option>
                       ))}
@@ -399,7 +462,9 @@ const TemplateGenerator = () => {
 
                 {/* Target Role */}
                 <div>
-                  <label className="block text-sm text-gray-300 mb-2">Target Role</label>
+                  <label className="block text-sm text-gray-300 mb-2">
+                    Target Role
+                  </label>
                   <input
                     type="text"
                     value={targetRole}
@@ -410,7 +475,9 @@ const TemplateGenerator = () => {
                     }`}
                   />
                   {errors.targetRole && (
-                    <p className="mt-1 text-xs text-red-400">{errors.targetRole}</p>
+                    <p className="mt-1 text-xs text-red-400">
+                      {errors.targetRole}
+                    </p>
                   )}
                 </div>
 
@@ -430,12 +497,16 @@ const TemplateGenerator = () => {
                       errors.yoe ? "border-red-500" : "border-gray-700"
                     }`}
                   />
-                  {errors.yoe && <p className="mt-1 text-xs text-red-400">{errors.yoe}</p>}
+                  {errors.yoe && (
+                    <p className="mt-1 text-xs text-red-400">{errors.yoe}</p>
+                  )}
                 </div>
 
                 {/* JD */}
                 <div>
-                  <label className="block text-sm text-gray-300 mb-2">Job Description (JD)</label>
+                  <label className="block text-sm text-gray-300 mb-2">
+                    Job Description (JD)
+                  </label>
                   <textarea
                     rows={5}
                     value={jd}
@@ -445,12 +516,16 @@ const TemplateGenerator = () => {
                       errors.jd ? "border-red-500" : "border-gray-700"
                     }`}
                   />
-                  {errors.jd && <p className="mt-1 text-xs text-red-400">{errors.jd}</p>}
+                  {errors.jd && (
+                    <p className="mt-1 text-xs text-red-400">{errors.jd}</p>
+                  )}
                 </div>
 
                 {/* Resume */}
                 <div>
-                  <label className="block text-sm text-gray-300 mb-2">Resume (File Upload)</label>
+                  <label className="block text-sm text-gray-300 mb-2">
+                    Resume (File Upload)
+                  </label>
                   <div className="flex items-center gap-3">
                     <label className="inline-flex items-center gap-2 px-4 py-2 bg-white text-black font-semibold rounded-xl hover:bg-gray-100 cursor-pointer">
                       <LuFileUp className="w-4 h-4" />
@@ -466,7 +541,9 @@ const TemplateGenerator = () => {
                       {resumeFile ? resumeFile.name : "No file selected"}
                     </span>
                   </div>
-                  {errors.resume && <p className="mt-1 text-xs text-red-400">{errors.resume}</p>}
+                  {errors.resume && (
+                    <p className="mt-1 text-xs text-red-400">{errors.resume}</p>
+                  )}
                 </div>
 
                 {/* Generate - Wider button */}
@@ -474,7 +551,7 @@ const TemplateGenerator = () => {
                   <button
                     onClick={onGenerate}
                     disabled={loading}
-                    className="w-full inline-flex items-center justify-center gap-2 px-6 py-3 rounded-xl bg-white text-black font-bold disabled:opacity-50 transition-all duration-300 hover:scale-[1.02]"
+                    className="w-full inline-flex items-center justify-center gap-2 px-6 py-3 rounded-xl bg-white text-black font-bold disabled:opacity-50 transition-all duration-300 hover:scale-[1.02] cursor-pointer"
                   >
                     {loading ? (
                       <>
@@ -493,13 +570,15 @@ const TemplateGenerator = () => {
             </div>
 
             {/* Right: Output */}
-            <div className="bg-zinc-900/50 border border-gray-800 rounded-2xl p-6 lg:p-8">
+            <div className="bg-zinc-900/50 border border-gray-800 rounded-2xl p-4 sm:p-6 lg:p-8 order-2 xl:order-2">
               <div className="flex items-center justify-between mb-4">
-                <div className="flex items-center gap-3">
+                <div className="flex items-center gap-2 sm:gap-3">
                   <div className="p-2 bg-zinc-800/70 rounded-xl border border-gray-700">
-                    <LuFileText className="w-5 h-5 text-blue-300" />
+                    <LuFileText className="w-4 h-4 sm:w-5 sm:h-5 text-blue-300" />
                   </div>
-                  <h2 className="text-xl font-bold text-white">Generated Template</h2>
+                  <h2 className="text-lg sm:text-xl font-bold text-white">
+                    Generated Template
+                  </h2>
                 </div>
 
                 {/* Show copy/save only after response */}
@@ -507,21 +586,23 @@ const TemplateGenerator = () => {
                   <div className="flex items-center gap-2">
                     <button
                       onClick={onCopy}
-                      className={`px-3 py-2 rounded-lg text-sm transition-all duration-300 ${
+                      className={`px-2 sm:px-3 py-2 rounded-lg text-xs sm:text-sm transition-all duration-300 cursor-pointer ${
                         copied
                           ? "bg-emerald-600 text-white hover:bg-emerald-500"
                           : "bg-black/40 text-white border border-gray-700 hover:bg-zinc-800"
                       }`}
                     >
                       <div className="flex items-center gap-2">
-                        <LuCopy className={`w-4 h-4 ${copied ? "text-white" : ""}`} />
+                        <LuCopy
+                          className={`w-4 h-4 ${copied ? "text-white" : ""}`}
+                        />
                         <span>{copied ? "Copied" : "Copy"}</span>
                       </div>
                     </button>
                     <button
                       onClick={onSave}
                       disabled={saving}
-                      className="px-3 py-2 rounded-lg text-sm bg-emerald-600 text-white hover:bg-emerald-500 transition-colors duration-300 disabled:opacity-50"
+                      className="px-2 sm:px-3 py-2 rounded-lg text-xs sm:text-sm bg-emerald-600 text-white hover:bg-emerald-500 transition-colors duration-300 disabled:opacity-50 cursor-pointer"
                     >
                       <div className="flex items-center gap-2">
                         {saving ? (
@@ -538,20 +619,24 @@ const TemplateGenerator = () => {
 
               <div className="bg-black/40 border border-gray-800 rounded-xl p-5 min-h-[260px] overflow-y-auto">
                 {loading ? (
-                  <div className="text-gray-400">Waiting for AI response...</div>
+                  <div className="text-gray-400">
+                    Waiting for AI response...
+                  </div>
                 ) : template ? (
                   <pre className="whitespace-pre-wrap text-gray-100 text-[14px] leading-relaxed font-['Inter',ui-sans-serif,system-ui,-apple-system,sans-serif]">
                     {template}
                   </pre>
                 ) : (
                   <div className="text-gray-500 text-sm">
-                    The generated template will appear here with a Subject and Email body.
+                    The generated template will appear here with a Subject and
+                    Email body.
                   </div>
                 )}
               </div>
 
               <div className="mt-4 text-xs text-gray-500">
-                Output is formatted for direct use in email clients. Review before sending.
+                Output is formatted for direct use in email clients. Review
+                before sending.
               </div>
             </div>
           </div>

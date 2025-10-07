@@ -1,6 +1,5 @@
 // src/pages/Templates/MyLibrary.jsx
-// Polished templates library with colored icons, card layout, modal preview with copy,
-// back arrow to Template Generator, and consistent dark UI.
+// Added: Delete confirmation modal (openDelete modal) similar to previous pages before deleting a template.
 
 import React, { useState, useEffect } from "react";
 import {
@@ -16,6 +15,7 @@ import {
   LuArrowLeft,
   LuTag,
   LuUser,
+  LuX,
 } from "react-icons/lu";
 import { toast } from "react-hot-toast";
 import DashboardLayout from "../../components/layouts/DashboardLayout";
@@ -62,6 +62,13 @@ const MyLibrary = () => {
   const [previewItem, setPreviewItem] = useState(null);
   const [copied, setCopied] = useState(false);
 
+  // Delete modal state
+  const [deleteModal, setDeleteModal] = useState({
+    show: false,
+    id: null,
+    role: "",
+  });
+
   useEffect(() => {
     fetchTemplates();
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -79,26 +86,34 @@ const MyLibrary = () => {
       );
       setTemplates(res.data?.templates || []);
     } catch (error) {
-      console.error("Fetch templates error:", error);
       toast.error("Failed to load your templates. Please try again.");
     } finally {
       setLoading(false);
     }
   };
 
-  const deleteTemplate = async (id) => {
-    setDeletingId(id);
+  const askDelete = (e, id, role) => {
+    e.stopPropagation();
+    setDeleteModal({ show: true, id, role: role || "" });
+  };
+
+  const closeDeleteModal = () => {
+    setDeleteModal({ show: false, id: null, role: "" });
+  };
+
+  const confirmDelete = async () => {
+    if (!deleteModal.id) return;
+    setDeletingId(deleteModal.id);
     try {
-      await axiosInstance.delete(API_PATHS.TEMPLATES.DELETE(id));
-      setTemplates((prev) => prev.filter((t) => t._id !== id));
-      // Close preview if deleting the previewed item
-      if (previewItem && previewItem._id === id) {
+      await axiosInstance.delete(API_PATHS.TEMPLATES.DELETE(deleteModal.id));
+      setTemplates((prev) => prev.filter((t) => t._id !== deleteModal.id));
+      if (previewItem && previewItem._id === deleteModal.id) {
         setPreviewOpen(false);
         setPreviewItem(null);
       }
       toast.success("Template deleted successfully!");
+      closeDeleteModal();
     } catch (error) {
-      console.error("Delete template error:", error);
       toast.error("Failed to delete template. Please try again.");
     } finally {
       setDeletingId(null);
@@ -141,7 +156,7 @@ const MyLibrary = () => {
                 <div className="flex items-center gap-4">
                   <button
                     onClick={() => navigate("/templates")}
-                    className="p-3 rounded-xl bg-zinc-800/70 border border-gray-700 hover:bg-zinc-800 transition-colors"
+                    className="p-3 cursor-pointer rounded-xl bg-zinc-800/70 border border-gray-700 hover:bg-zinc-800 transition-colors"
                     title="Back to Template Generator"
                   >
                     <LuArrowLeft className="w-6 h-6 text-emerald-400" />
@@ -161,7 +176,7 @@ const MyLibrary = () => {
 
                 <button
                   onClick={() => navigate("/templates")}
-                  className="flex items-center gap-2 px-6 py-3 bg-white hover:bg-gray-100 text-black font-semibold rounded-xl transition-all duration-300"
+                  className="flex items-center cursor-pointer gap-2 px-6 py-3 bg-white hover:bg-gray-100 text-black font-semibold rounded-xl transition-all duration-300"
                 >
                   <LuMail className="w-4 h-4" />
                   Template Generator
@@ -200,7 +215,7 @@ const MyLibrary = () => {
                 <select
                   value={typeFilter}
                   onChange={(e) => setTypeFilter(e.target.value)}
-                  className="bg-transparent text-white focus:outline-none"
+                  className="bg-transparent text-white focus:outline-none cursor-pointer"
                 >
                   {TYPE_OPTIONS.map((opt) => (
                     <option key={opt.value} value={opt.value} className="bg-zinc-900">
@@ -280,7 +295,7 @@ const MyLibrary = () => {
                               e.stopPropagation();
                               copyTemplate(tpl.content);
                             }}
-                            className="flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-semibold bg-zinc-800 text-gray-300 border border-gray-600 hover:bg-zinc-700 transition-colors"
+                            className="flex cursor-pointer items-center gap-2 px-3 py-2 rounded-lg text-xs font-semibold bg-zinc-800 text-gray-300 border border-gray-600 hover:bg-zinc-700 transition-colors"
                             title="Copy"
                           >
                             <LuCopy className="w-4 h-4 text-emerald-300" />
@@ -288,12 +303,9 @@ const MyLibrary = () => {
                           </button>
 
                           <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              deleteTemplate(tpl._id);
-                            }}
+                            onClick={(e) => askDelete(e, tpl._id, tpl.targetRole)}
                             disabled={deletingId === tpl._id}
-                            className="flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-semibold text-red-400 hover:text-red-300 hover:bg-red-500/15 border border-red-500/25 transition-colors disabled:opacity-50"
+                            className="flex cursor-pointer items-center gap-2 px-3 py-2 rounded-lg text-xs font-semibold text-red-400 hover:text-red-300 hover:bg-red-500/15 border border-red-500/25 transition-colors disabled:opacity-50"
                             title="Delete"
                           >
                             {deletingId === tpl._id ? (
@@ -334,10 +346,7 @@ const MyLibrary = () => {
         {/* Preview Modal */}
         {previewOpen && previewItem && (
           <div className="fixed inset-0 z-[70] flex items-center justify-center">
-            <div
-              className="absolute inset-0 bg-black/70 backdrop-blur-sm"
-              onClick={closePreview}
-            />
+            <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" onClick={closePreview} />
             <div className="relative bg-zinc-900 border border-gray-800 rounded-2xl w-[95%] max-w-3xl p-6 shadow-2xl">
               {/* Modal header */}
               <div className="flex items-center justify-between mb-4">
@@ -400,7 +409,7 @@ const MyLibrary = () => {
                     </div>
                   </button>
                   <button
-                    onClick={() => deleteTemplate(previewItem._id)}
+                    onClick={() => askDelete(new Event("click"), previewItem._id, previewItem.targetRole)}
                     disabled={deletingId === previewItem._id}
                     className="px-4 py-2 rounded-lg text-red-400 hover:text-red-300 hover:bg-red-500/15 border border-red-500/25 transition-colors disabled:opacity-50"
                   >
@@ -414,6 +423,42 @@ const MyLibrary = () => {
                     </div>
                   </button>
                 </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Delete Confirmation Modal */}
+        {deleteModal.show && (
+          <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+            <div className="bg-zinc-900 border border-gray-700 rounded-2xl p-8 max-w-md w-full shadow-2xl">
+              <div className="flex items-center justify-between mb-6">
+                <h3 className="text-xl font-bold text-white">Delete Template</h3>
+                <button
+                  onClick={closeDeleteModal}
+                  className="p-2 cursor-pointer text-gray-400 hover:text-gray-200 hover:bg-gray-700 rounded-xl transition-colors duration-300"
+                >
+                  <LuX className="w-5 h-5" />
+                </button>
+              </div>
+              <p className="text-gray-300 mb-8 leading-relaxed">
+                Are you sure you want to delete the template{" "}
+                <span className="font-semibold text-white">"{deleteModal.role || "this"}"</span>? This action
+                cannot be undone.
+              </p>
+              <div className="flex gap-4 justify-end">
+                <button
+                  onClick={closeDeleteModal}
+                  className=" cursor-pointer px-6 py-3 text-gray-400 hover:text-gray-200 hover:bg-gray-700 rounded-xl transition-all duration-300 font-medium"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={confirmDelete}
+                  className="px-6 py-3 cursor-pointer bg-red-500 hover:bg-red-400 text-white rounded-xl transition-all duration-300 font-semibold shadow-lg hover:shadow-red-500/25"
+                >
+                  Delete
+                </button>
               </div>
             </div>
           </div>
