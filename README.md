@@ -53,18 +53,18 @@ It uses **Gemini API** for intelligent responses, **Tailwind CSS + Framer Motion
 
 ---
 
-### 4️⃣ AI-Powered Resources
-- Enter any **topic** to get **24 AI-curated resources** across 4 categories:  
-  - Theory  
-  - Docs  
-  - Videos  
-  - Practice  
-- Each resource card includes:  
-  - **Title**  
-  - **Why this resource is good (summary)**  
-  - **Difficulty tag**  
-  - **Link to open resource**  
-  - **Save option**  
+### 4️⃣ AI-Powered Template Generator
+- Generate professional emails for cold outreach, referrals, and follow-ups.
+- Create an email template with inputs: **Target role**, **Years of experience**, **(Optional) Job description and resume file (required for some types)**
+- Three template types:
+  - Cold mail to the recruiter  
+  - Ask for a referral
+  - Follow up
+- Features:  
+  - **Download, copy, and save generated templates**  
+  - **Persistent “Total Generated” and “Saved Templates” activity counters**  
+  - **Responsive, modern UI with Inter font and accessibility-focused design**  
+  - **All templates are saved in “My Library” for future reuse**  
 - **My Library** page:  
   - View all saved resources by category  
   - Option to **delete saved resources**  
