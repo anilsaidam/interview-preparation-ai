@@ -22,10 +22,11 @@ const app = express();
 app.use(
     cors({
         origin: ["https://career-companion-ai.onrender.com",
-        "http://localhost:3000"
+        "http://localhost:5173"
         ],
         methods: ["GET", "POST", "PUT", "DELETE"],
         allowedHeaders: ["Content-type", "Authorization"],
+        credentials: true
     })
 );
 
