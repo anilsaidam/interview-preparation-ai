@@ -1,12 +1,15 @@
+// Login.jsx
+
 import React, { useContext, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import Input from "../../components/Inputs/Input";
 import { validateEmail } from "../../utils/helper";
 import axiosInstance from "../../utils/axiosInstance";
 import { API_PATHS } from "../../utils/apiPaths";
 import { UserContext } from "../../context/userContext";
+import { LuX } from "react-icons/lu";
 
-const Login = () => {
+// Add onClose prop to Login component
+const Login = ({ onClose, setCurrentPage }) => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState(null);
@@ -56,131 +59,89 @@ const Login = () => {
   };
 
   return (
-    <div className="min-h-screen bg-black flex">
-      {/* Left Side - Welcome Section */}
-      <div className="hidden lg:flex lg:w-1/2 bg-black border-r border-white/10 items-center justify-center p-12">
-        <div className="max-w-lg text-center">
-          <div className="mb-8">
-            <div className="w-24 h-24 bg-white rounded-full flex items-center justify-center mx-auto mb-6">
-              <svg className="w-12 h-12 text-black" fill="currentColor" viewBox="0 0 20 20">
-                <path d="M10 2L3 7v11a1 1 0 001 1h3a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1h3a1 1 0 001-1V7l-7-5z"/>
-              </svg>
-            </div>
+    <div className="flex items-center justify-center min-h-full p-4 sm:p-6 lg:p-12">
+      <div className="w-full max-w-md relative">
+        {/* Close Button */}
+        <button
+          type="button"
+          className="absolute cursor-pointer top-4 right-4 text-white/80 hover:text-white transition-colors duration-300 z-50 bg-black/30 hover:bg-black/50 rounded-full p-2 backdrop-blur-sm"
+          onClick={onClose} // Use the onClose prop to close the modal
+        >
+          <LuX className="w-6 h-6" />
+        </button>
+
+        <div className="lg:hidden text-center mb-8 pt-12">
+          <div className="w-16 h-16 bg-white rounded-full flex items-center justify-center mx-auto mb-4">
+            <svg
+              className="w-8 h-8 text-black"
+              fill="currentColor"
+              viewBox="0 0 20 20"
+            >
+              <path d="M10 2L3 7v11a1 1 0 001 1h3a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1h3a1 1 0 001-1V7l-7-5z" />
+            </svg>
           </div>
-          <h1 className="text-4xl font-bold text-white mb-6">Welcome Back</h1>
-          <p className="text-xl text-white/70 leading-relaxed">
-            Access your dashboard and continue your journey with our platform. 
-            Sign in to unlock all features and manage your account.
+          <h1 className="text-2xl sm:text-3xl font-bold text-white">
+            Welcome Back
+          </h1>
+        </div>
+        <div className="mb-6 lg:mb-10">
+          <h2 className="text-xl lg:text-2xl font-bold text-white mb-2">
+            Sign In
+          </h2>
+          <p className="text-white/60 text-sm lg:text-base">
+            Enter your credentials to access your account
           </p>
         </div>
-      </div>
-
-      {/* Right Side - Login Form */}
-      <div className="w-full lg:w-1/2 bg-black flex items-center justify-center p-6 lg:p-12">
-        <div className="w-full max-w-md">
-          {/* Mobile Header */}
-          <div className="lg:hidden text-center mb-12">
-            <div className="w-16 h-16 bg-white rounded-full flex items-center justify-center mx-auto mb-4">
-              <svg className="w-8 h-8 text-black" fill="currentColor" viewBox="0 0 20 20">
-                <path d="M10 2L3 7v11a1 1 0 001 1h3a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1h3a1 1 0 001-1V7l-7-5z"/>
-              </svg>
-            </div>
-            <h1 className="text-3xl font-bold text-white">Welcome Back</h1>
+        <form onSubmit={handleLogin} className="space-y-5 lg:space-y-6">
+          <div>
+            <label className="block text-sm font-semibold text-white mb-2">
+              Email Address
+            </label>
+            <input
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder="Enter your email"
+              className="w-full px-4 py-3 bg-black border-2 border-white/20 text-white placeholder-white/40 rounded-lg focus:border-white transition"
+              required
+            />
           </div>
 
-          {/* Close Button */}
+          <div>
+            <label className="block text-sm font-semibold text-white mb-2">
+              Password
+            </label>
+            <input
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              placeholder="Enter your password"
+              className="w-full px-4 py-3 bg-black border-2 border-white/20 text-white placeholder-white/40 rounded-lg focus:border-white transition"
+              required
+            />
+          </div>
+
+          {error && <p className="text-red-400 text-sm">{error}</p>}
+
           <button
-            type="button"
-            className="absolute top-6 right-6 text-white/60 hover:text-white transition-colors duration-300"
-            onClick={() => navigate("/")}
+            type="submit"
+            disabled={loading}
+            className="w-full bg-white text-black font-bold py-3 rounded-lg hover:bg-white/90 transition disabled:opacity-50"
           >
-            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-            </svg>
+            {loading ? "Signing In..." : "SIGN IN"}
           </button>
 
-          {/* Form Header */}
-          <div className="mb-10">
-            <h2 className="text-2xl font-bold text-white mb-2">Sign In</h2>
-            <p className="text-white/60">Enter your credentials to access your account</p>
-          </div>
-
-          {/* Login Form */}
-          <form onSubmit={handleLogin} className="space-y-6">
-            <div className="space-y-5">
-              <div>
-                <label className="block text-sm font-semibold text-white mb-2">
-                  Email Address
-                </label>
-                <input
-                  type="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  placeholder="Enter your email"
-                  className="w-full px-4 py-4 bg-black border-2 border-white/20 text-white placeholder-white/40 rounded-lg focus:border-white focus:outline-none transition-all duration-300"
-                  required
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-semibold text-white mb-2">
-                  Password
-                </label>
-                <input
-                  type="password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  placeholder="Enter your password"
-                  className="w-full px-4 py-4 bg-black border-2 border-white/20 text-white placeholder-white/40 rounded-lg focus:border-white focus:outline-none transition-all duration-300"
-                  required
-                />
-              </div>
-            </div>
-
-            {error && (
-              <div className="bg-red-500/10 border border-red-500/30 rounded-lg p-4">
-                <p className="text-red-400 text-sm font-medium">{error}</p>
-              </div>
-            )}
-
+          <div className="text-center mt-4 text-white/60">
+            <p>New to our platform?</p>
             <button
-              type="submit"
-              disabled={loading}
-              className="w-full bg-white text-black font-bold py-4 px-6 rounded-lg hover:bg-white/90 focus:bg-white/90 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {loading ? (
-                <div className="flex items-center justify-center">
-                  <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-black" fill="none" viewBox="0 0 24 24">
-                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                  </svg>
-                  Signing In...
-                </div>
-              ) : (
-                'SIGN IN'
-              )}
-            </button>
-
-            {/* Divider */}
-            <div className="relative my-8">
-              <div className="absolute inset-0 flex items-center">
-                <div className="w-full border-t border-white/10"></div>
-              </div>
-              <div className="relative flex justify-center text-sm">
-                <span className="px-4 bg-black text-white/60">New to our platform?</span>
-              </div>
-            </div>
-
-            {/* Sign Up Link */}
-            <button
+              onClick={() => setCurrentPage("signup")}
               type="button"
-              onClick={() => navigate("/signup")}
-              className="w-full border-2 border-white text-white font-bold py-4 px-6 rounded-lg hover:bg-white hover:text-black focus:bg-white focus:text-black transition-all duration-300"
+              className="mt-2 w-full border-2 border-white text-white py-3 rounded-lg hover:bg-white hover:text-black transition"
             >
               CREATE ACCOUNT
             </button>
-          </form>
-        </div>
+          </div>
+        </form>
       </div>
     </div>
   );
