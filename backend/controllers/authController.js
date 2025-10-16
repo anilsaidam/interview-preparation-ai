@@ -44,31 +44,48 @@ const registerUser = async (req, res) => {
 
 const loginUser = async (req, res) => {
   try {
+    console.log("LOGIN ATTEMPT", req.body);
+
     const { email, password } = req.body;
 
+    // Step 1: Find user
     const user = await User.findOne({ email });
+    console.log("USER FOUND:", user ? user.email : "NO USER");
+
     if (!user) {
-      return res.status(500).json({ message: "Invalid email or password" });
+      console.log("LOGIN FAILED: User not found for", email);
+      return res.status(401).json({ message: "Invalid email or password" });
     }
 
-    // Compare password
+    // Step 2: Compare password
     const isMatch = await bcrypt.compare(password, user.password);
+    console.log("PASSWORD MATCH:", isMatch);
+
     if (!isMatch) {
-      return res.status(500).json({ message: "Invalid email or password" });
+      console.log("LOGIN FAILED: Password incorrect for", email);
+      return res.status(401).json({ message: "Invalid email or password" });
     }
 
-    // Return user data with JWT
+    // Step 3: Generate token
+    const token = generateToken(user._id);
+    console.log("JWT GENERATED:", token ? "YES" : "NO");
+
+    // Step 4: Respond
     res.json({
       _id: user._id,
       name: user.name,
       email: user.email,
       profileImageUrl: user.profileImageUrl,
-      token: generateToken(user._id),
+      token,
     });
+    console.log("LOGIN SUCCESS for", email);
+
   } catch (error) {
+    console.error("LOGIN ERROR", error);
     res.status(500).json({ message: "Server error", error: error.message });
   }
 };
+
 
 const getUserProfile = async (req, res) => {
   try {
