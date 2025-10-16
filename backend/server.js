@@ -21,7 +21,9 @@ const app = express();
 //Middleware to handle CORS
 app.use(
     cors({
-        origin: "*",
+        origin: ["https://career-companion-ai.onrender.com",
+        "http://localhost:3000"
+        ],
         methods: ["GET", "POST", "PUT", "DELETE"],
         allowedHeaders: ["Content-type", "Authorization"],
     })
