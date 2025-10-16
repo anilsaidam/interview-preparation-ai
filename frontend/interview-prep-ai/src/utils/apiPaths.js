@@ -1,5 +1,5 @@
 // src/utils/apiPaths.js
-export const BASE_URL = "http://localhost:8000";
+export const BASE_URL = process.env.REACT_APP_API_URL;
 
 export const API_PATHS = {
   AUTH: {
