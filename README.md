@@ -21,7 +21,25 @@ AI generates 10 role-specific questions with answers.
 
 Features:
 
+<<<<<<< HEAD
 Pin/unpin questions
+=======
+### 4️⃣ AI-Powered Template Generator
+- Generate professional emails for cold outreach, referrals, and follow-ups.
+- Create an email template with inputs: **Target role**, **Years of experience**, **(Optional) Job description and resume file (required for some types)**
+- Three template types:
+  - Cold mail to the recruiter  
+  - Ask for a referral
+  - Follow up
+- Features:  
+  - **Download, copy, and save generated templates**  
+  - **Persistent “Total Generated” and “Saved Templates” activity counters**  
+  - **Responsive, modern UI with Inter font and accessibility-focused design**  
+  - **All templates are saved in “My Library” for future reuse**  
+- **My Library** page:  
+  - View all saved resources by category  
+  - Option to **delete saved resources**  
+>>>>>>> bb3183ade60e1cf69ff7314d100f20380700bab6
 
 “Learn More” option with detailed explanation box (copyable)
 
