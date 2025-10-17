@@ -4,6 +4,7 @@ const path = require("path");
 const mongoose = require("mongoose");
 require("dotenv").config();
 
+// Import routes and middleware
 const authRoutes = require("./routes/authRoutes");
 const sessionRoutes = require("./routes/sessionRoutes");
 const questionRoutes = require("./routes/questionRoutes");
@@ -18,7 +19,7 @@ const {
 
 const app = express();
 
-// Enhanced DB Connect with error handling
+// Database connection helper with error handling
 const connectDB = async () => {
   if (mongoose.connection.readyState === 1) {
     console.log("MongoDB already connected");
@@ -32,14 +33,14 @@ const connectDB = async () => {
   }
 };
 
+// Connect to MongoDB (make sure this is invoked appropriately in serverless functions)
 connectDB();
 
-//CORS Middleware
 app.use(
   cors({
     origin: [
-      "https://career-companion-ai-xi.vercel.app",
-      "http://localhost:5173",
+      "https://career-companion-ai-xi.vercel.app", // Your deployed frontend URL without trailing slash
+      "http://localhost:5173", // Local dev URL
     ],
     methods: ["GET", "POST", "PUT", "DELETE"],
     allowedHeaders: ["Content-type", "Authorization"],
@@ -49,7 +50,7 @@ app.use(
 
 app.use(express.json());
 
-// API Routes
+// Mount Routes
 app.use("/api/auth", authRoutes);
 app.use("/api/sessions", sessionRoutes);
 app.use("/api/questions", questionRoutes);
@@ -60,13 +61,13 @@ app.use("/api/templates", templatesRoutes);
 app.use("/api/ai/generate-questions", protect, generateInterviewQuestions);
 app.use("/api/ai/generate-explanation", protect, generateConceptExplanation);
 
-// Serve uploads folder statically
+// Serve uploads statically
 app.use("/uploads", express.static(path.join(__dirname, "../uploads")));
 
-// Root API route - health check
+// Basic root health route
 app.get("/", (req, res) => {
   res.send("Career Companion AI backend is running!");
 });
 
-// Export the app for Vercel serverless function
+// Export app for Vercel serverless
 module.exports = app;
