@@ -5,17 +5,17 @@ const mongoose = require("mongoose");
 require("dotenv").config();
 
 // Import routes and middleware
-const authRoutes = require("./routes/authRoutes");
-const sessionRoutes = require("./routes/sessionRoutes");
-const questionRoutes = require("./routes/questionRoutes");
-const atsRoutes = require("./routes/atsRoutes");
-const { protect } = require("./middlewares/authMiddleware");
-const codingRoutes = require("./routes/codingRoutes");
-const templatesRoutes = require("./routes/templateRoutes");
+const authRoutes = require("../routes/authRoutes");
+const sessionRoutes = require("../routes/sessionRoutes");
+const questionRoutes = require("../routes/questionRoutes");
+const atsRoutes = require("../routes/atsRoutes");
+const codingRoutes = require("../routes/codingRoutes");
+const templatesRoutes = require("../routes/templateRoutes");
+const { protect } = require("../middlewares/authMiddleware");
 const {
   generateInterviewQuestions,
   generateConceptExplanation,
-} = require("./controllers/aiController");
+} = require("../controllers/aiController");
 
 const app = express();
 
