@@ -25,6 +25,7 @@ const App = () => {
         <div>
           <Router>
             <Routes>
+              {/* Routes */}
               <Route path="/" element={<LandingPage />} />
               <Route path="/login" element={<Login />} />
               <Route path="/signup" element={<SignUp />} />
