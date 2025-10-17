@@ -34,7 +34,7 @@ const connectDB = async () => {
 
 connectDB();
 
-// CORS Middleware
+//CORS Middleware
 app.use(
   cors({
     origin: [
