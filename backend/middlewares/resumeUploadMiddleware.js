@@ -1,14 +1,8 @@
 const multer = require("multer");
 const path = require("path");
 
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    cb(null, "uploads/");
-  },
-  filename: (req, file, cb) => {
-    cb(null, `${Date.now()}-${file.originalname}`);
-  },
-});
+// Use memory storage instead of diskStorage
+const storage = multer.memoryStorage();
 
 const allowedMimeTypes = [
   "application/pdf",
@@ -18,6 +12,10 @@ const allowedMimeTypes = [
 const allowedExtensions = [".pdf", ".docx"];
 
 const fileFilter = (req, file, cb) => {
+  if (req.body && req.body.remove === "true") {
+    return cb(null, true);
+  }
+
   const ext = path.extname(file.originalname).toLowerCase();
   if (
     allowedMimeTypes.includes(file.mimetype) ||
