@@ -4,14 +4,15 @@ const path = require("path");
 const mongoose = require("mongoose");
 require("dotenv").config();
 
+const app = express(); 
+
+// --- PATCH: Fix Vercel route stripping ---
 app.use((req, res, next) => {
-  // On Vercel, req.url might be "/api/whatever"
   if (req.url.startsWith("/api/")) {
     req.url = req.url.replace(/^\/api/, "");
   }
   next();
 });
-
 
 // Import routes and middleware
 const authRoutes = require("../routes/authRoutes");
@@ -25,8 +26,6 @@ const {
   generateInterviewQuestions,
   generateConceptExplanation,
 } = require("../controllers/aiController");
-
-const app = express();
 
 // Database connection helper with error handling
 const connectDB = async () => {
@@ -48,8 +47,8 @@ connectDB();
 app.use(
   cors({
     origin: [
-      "https://career-companion-ai-xi.vercel.app", // Your deployed frontend URL without trailing slash
-      "http://localhost:5173", // Local dev URL
+      "https://career-companion-ai-xi.vercel.app",
+      "http://localhost:5173",
     ],
     methods: ["GET", "POST", "PUT", "DELETE"],
     allowedHeaders: ["Content-type", "Authorization"],
@@ -78,6 +77,7 @@ app.get("/", (req, res) => {
   res.send("Career Companion AI backend is running!");
 });
 
+// Dummy test route
 app.get("/api/test", (req, res) => {
   res.json({ status: "success" });
 });
