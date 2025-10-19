@@ -69,5 +69,9 @@ app.get("/", (req, res) => {
   res.send("Career Companion AI backend is running!");
 });
 
+app.get("/api/test", (req, res) => {
+  res.json({ status: "success" });
+});
+
 // Export app for Vercel serverless
 module.exports = app;
