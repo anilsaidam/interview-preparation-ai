@@ -6,14 +6,6 @@ require("dotenv").config();
 
 const app = express(); 
 
-// --- PATCH: Fix Vercel route stripping ---
-app.use((req, res, next) => {
-  if (req.url.startsWith("/api/")) {
-    req.url = req.url.replace(/^\/api/, "");
-  }
-  next();
-});
-
 // Import routes and middleware
 const authRoutes = require("../routes/authRoutes");
 const sessionRoutes = require("../routes/sessionRoutes");
@@ -41,7 +33,7 @@ const connectDB = async () => {
   }
 };
 
-// Connect to MongoDB (make sure this is invoked appropriately in serverless functions)
+// Connect to MongoDB
 connectDB();
 
 app.use(
