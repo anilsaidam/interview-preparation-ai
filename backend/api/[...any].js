@@ -79,5 +79,10 @@ app.get("/api/test", (req, res) => {
   res.json({ status: "success" });
 });
 
-// Export app for Vercel serverless
+// For Vercel serverless functions, we need to export a default function
+// that handles the request/response
 module.exports = app;
+module.exports.handler = (req, res) => {
+  // Pass the request and response to the Express app
+  app(req, res);
+};
