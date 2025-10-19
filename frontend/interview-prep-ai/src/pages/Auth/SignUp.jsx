@@ -75,136 +75,98 @@ const SignUp = ({ onClose }) => {
   };
 
   return (
-    <div className="min-h-screen bg-black flex flex-col lg:flex-row">
-      {/* Left Section */}
-      <div className="hidden lg:flex lg:w-1/2 bg-black border-r border-white/10 items-center justify-center p-12">
-        <div className="max-w-lg text-center">
-          <div className="w-24 h-24 bg-white rounded-full flex items-center justify-center mx-auto mb-6">
+    <div className="min-h-screen flex items-center justify-center bg-black px-4 py-8">
+      <div className="max-w-md w-full p-6 bg-black rounded-xl shadow-lg relative">
+        <button
+          type="button"
+          className="absolute cursor-pointer top-4 right-4 text-white/80 hover:text-white transition-colors duration-300 z-50 bg-black/30 hover:bg-black/50 rounded-full p-2"
+          onClick={() => {
+            if (onClose) onClose();
+            else navigate("/"); // fallback navigate to homepage if onClose not provided
+          }}
+        >
+          <LuX className="w-6 h-6" />
+        </button>
+
+        <div className="text-center mb-8">
+          <div className="w-16 h-16 bg-white rounded-full mx-auto flex items-center justify-center mb-4">
             <svg
-              className="w-12 h-12 text-black"
+              className="w-8 h-8 text-black"
               fill="currentColor"
               viewBox="0 0 20 20"
             >
               <path d="M13 6a3 3 0 11-6 0 3 3 0 016 0zM18 8a2 2 0 11-4 0 2 2 0 014 0zM14 15a4 4 0 00-8 0v3h8v-3zM6 8a2 2 0 11-4 0 2 2 0 014 0zM16 18v-3a5.972 5.972 0 00-.75-2.906A3.005 3.005 0 0119 15v3h-3zM4.75 12.094A5.973 5.973 0 004 15v3H1v-3a3 3 0 013.75-2.906z" />
             </svg>
           </div>
-          <h1 className="text-4xl font-bold text-white mb-6">
+          <h1 className="text-2xl sm:text-3xl font-bold text-white">
             Join Our Platform
           </h1>
-          <p className="text-xl text-white/70">
-            Create your account and unlock access to powerful tools and
-            features. Start your journey with us today.
-          </p>
         </div>
-      </div>
-
-      {/* Right Section */}
-      <div className="w-full lg:w-1/2 bg-black">
-        {/* Make relative for absolute close button */}
-        <div className="relative h-screen overflow-y-auto">
-          {/* Close Button */}
-          <button
-            type="button"
-            className="absolute top-4 right-4 lg:top-6 lg:right-6 text-white/80 hover:text-white transition-colors duration-300 z-50 bg-black/30 hover:bg-black/50 rounded-full p-2 backdrop-blur-sm"
-            onClick={onClose}
-          >
-            <LuX className="w-6 h-6" />
-          </button>
-          <div className="flex items-center justify-center min-h-full p-4 sm:p-6 lg:p-12">
-            <div className="w-full max-w-md">
-              <div className="lg:hidden text-center mb-6 pt-12">
-                <div className="w-16 h-16 bg-white rounded-full flex items-center justify-center mx-auto mb-4">
-                  <svg
-                    className="w-8 h-8 text-black"
-                    fill="currentColor"
-                    viewBox="0 0 20 20"
-                  >
-                    <path d="M13 6a3 3 0 11-6 0 3 3 0 016 0zM18 8a2 2 0 11-4 0 2 2 0 014 0zM14 15a4 4 0 00-8 0v3h8v-3zM6 8a2 2 0 11-4 0 2 2 0 014 0zM16 18v-3a5.972 5.972 0 00-.75-2.906A3.005 3.005 0 0119 15v3h-3zM4.75 12.094A5.973 5.973 0 004 15v3H1v-3a3 3 0 013.75-2.906z" />
-                  </svg>
-                </div>
-                <h1 className="text-xl sm:text-2xl font-bold text-white">
-                  Join Our Platform
-                </h1>
-              </div>
-              <div className="mb-4 lg:mb-6">
-                <h2 className="text-xl lg:text-2xl font-bold text-white mb-2">
-                  Create Account
-                </h2>
-                <p className="text-white/60 text-sm lg:text-base">
-                  Fill in your details to get started
-                </p>
-              </div>
-              <form onSubmit={handleSignUp} className="space-y-4 lg:space-y-5">
-                <div className="flex justify-center mb-4 lg:mb-6">
-                  <ProfilePhotoSelecter
-                    image={profilePic}
-                    setImage={setProfilePic}
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-semibold text-white mb-2">
-                    Full Name
-                  </label>
-                  <input
-                    type="text"
-                    value={fullName}
-                    onChange={(e) => setFullName(e.target.value)}
-                    placeholder="Enter your full name"
-                    className="w-full px-4 py-3 bg-black border-2 border-white/20 text-white placeholder-white/40 rounded-lg focus:border-white transition"
-                    required
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-semibold text-white mb-2">
-                    Email Address
-                  </label>
-                  <input
-                    type="email"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    placeholder="Enter your email"
-                    className="w-full px-4 py-3 bg-black border-2 border-white/20 text-white placeholder-white/40 rounded-lg focus:border-white transition"
-                    required
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-semibold text-white mb-2">
-                    Password
-                  </label>
-                  <input
-                    type="password"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    placeholder="Create a strong password"
-                    className="w-full px-4 py-3 bg-black border-2 border-white/20 text-white placeholder-white/40 rounded-lg focus:border-white transition"
-                    required
-                  />
-                  <p className="text-white/40 text-xs mt-1">
-                    Minimum 8 characters required
-                  </p>
-                </div>
-                {error && <p className="text-red-400 text-sm">{error}</p>}
-                <button
-                  type="submit"
-                  disabled={loading}
-                  className="w-full bg-white text-black font-bold py-3 rounded-lg hover:bg-white/90 transition disabled:opacity-50"
-                >
-                  {loading ? "Creating Account..." : "CREATE ACCOUNT"}
-                </button>
-                <div className="text-center mt-4 text-white/60">
-                  <p>Already have an account?</p>
-                  <button
-                    onClick={() => navigate("/login")}
-                    type="button"
-                    className="mt-2 w-full border-2 border-white text-white py-3 rounded-lg hover:bg-white hover:text-black transition"
-                  >
-                    SIGN IN
-                  </button>
-                </div>
-              </form>
-            </div>
+        <form onSubmit={handleSignUp} className="space-y-5">
+          <div className="flex justify-center mb-4">
+            <ProfilePhotoSelecter image={profilePic} setImage={setProfilePic} />
           </div>
-        </div>
+          <div>
+            <label className="block text-sm font-semibold text-white mb-2">
+              Full Name
+            </label>
+            <input
+              type="text"
+              value={fullName}
+              onChange={(e) => setFullName(e.target.value)}
+              placeholder="Enter your full name"
+              className="w-full px-4 py-3 bg-black border-2 border-white/20 text-white placeholder-white/40 rounded-lg focus:border-white transition"
+              required
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-semibold text-white mb-2">
+              Email Address
+            </label>
+            <input
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder="Enter your email"
+              className="w-full px-4 py-3 bg-black border-2 border-white/20 text-white placeholder-white/40 rounded-lg focus:border-white transition"
+              required
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-semibold text-white mb-2">
+              Password
+            </label>
+            <input
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              placeholder="Create a strong password"
+              className="w-full px-4 py-3 bg-black border-2 border-white/20 text-white placeholder-white/40 rounded-lg focus:border-white transition"
+              required
+            />
+            <p className="text-white/40 text-xs mt-1">
+              Minimum 8 characters required
+            </p>
+          </div>
+          {error && <p className="text-red-400 text-sm">{error}</p>}
+          <button
+            type="submit"
+            disabled={loading}
+            className="w-full cursor-pointer bg-white text-black font-bold py-3 rounded-lg hover:bg-white/90 transition disabled:opacity-50"
+          >
+            {loading ? "Creating Account..." : "CREATE ACCOUNT"}
+          </button>
+          <div className="text-center mt-4 text-white/60">
+            <p>Already have an account?</p>
+            <button
+              type="button"
+              onClick={() => navigate("/login")}
+              className="mt-2 cursor-pointer w-full border-2 border-white text-white py-3 rounded-lg hover:bg-white hover:text-black transition"
+            >
+              SIGN IN
+            </button>
+          </div>
+        </form>
       </div>
     </div>
   );

@@ -1,5 +1,3 @@
-// Login.jsx
-
 import React, { useContext, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { validateEmail } from "../../utils/helper";
@@ -8,8 +6,7 @@ import { API_PATHS } from "../../utils/apiPaths";
 import { UserContext } from "../../context/userContext";
 import { LuX } from "react-icons/lu";
 
-// Add onClose prop to Login component
-const Login = ({ onClose, setCurrentPage }) => {
+const Login = ({ onClose }) => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState(null);
@@ -59,19 +56,21 @@ const Login = ({ onClose, setCurrentPage }) => {
   };
 
   return (
-    <div className="flex items-center justify-center min-h-full p-4 sm:p-6 lg:p-12">
-      <div className="w-full max-w-md relative">
-        {/* Close Button */}
+    <div className="min-h-screen flex items-center justify-center bg-black px-4 py-8">
+      <div className="max-w-md w-full p-6 bg-black rounded-xl shadow-lg relative">
         <button
           type="button"
-          className="absolute cursor-pointer top-4 right-4 text-white/80 hover:text-white transition-colors duration-300 z-50 bg-black/30 hover:bg-black/50 rounded-full p-2 backdrop-blur-sm"
-          onClick={onClose} // Use the onClose prop to close the modal
+          className=" cursor-pointer absolute top-4 right-4 text-white/80 hover:text-white transition-colors duration-300 z-50 bg-black/30 hover:bg-black/50 rounded-full p-2"
+          onClick={() => {
+            if (onClose) onClose();
+            else navigate("/"); // fallback navigate to homepage if onClose not provided
+          }}
         >
           <LuX className="w-6 h-6" />
         </button>
 
-        <div className="lg:hidden text-center mb-8 pt-12">
-          <div className="w-16 h-16 bg-white rounded-full flex items-center justify-center mx-auto mb-4">
+        <div className="text-center mb-8">
+          <div className="w-16 h-16 bg-white rounded-full mx-auto flex items-center justify-center mb-4">
             <svg
               className="w-8 h-8 text-black"
               fill="currentColor"
@@ -84,15 +83,7 @@ const Login = ({ onClose, setCurrentPage }) => {
             Welcome Back
           </h1>
         </div>
-        <div className="mb-6 lg:mb-10">
-          <h2 className="text-xl lg:text-2xl font-bold text-white mb-2">
-            Sign In
-          </h2>
-          <p className="text-white/60 text-sm lg:text-base">
-            Enter your credentials to access your account
-          </p>
-        </div>
-        <form onSubmit={handleLogin} className="space-y-5 lg:space-y-6">
+        <form onSubmit={handleLogin} className="space-y-5">
           <div>
             <label className="block text-sm font-semibold text-white mb-2">
               Email Address
@@ -106,7 +97,6 @@ const Login = ({ onClose, setCurrentPage }) => {
               required
             />
           </div>
-
           <div>
             <label className="block text-sm font-semibold text-white mb-2">
               Password
@@ -120,23 +110,20 @@ const Login = ({ onClose, setCurrentPage }) => {
               required
             />
           </div>
-
           {error && <p className="text-red-400 text-sm">{error}</p>}
-
           <button
             type="submit"
             disabled={loading}
-            className="w-full bg-white text-black font-bold py-3 rounded-lg hover:bg-white/90 transition disabled:opacity-50"
+            className="w-full cursor-pointer bg-white text-black font-bold py-3 rounded-lg hover:bg-white/90 transition disabled:opacity-50"
           >
             {loading ? "Signing In..." : "SIGN IN"}
           </button>
-
           <div className="text-center mt-4 text-white/60">
             <p>New to our platform?</p>
             <button
-              onClick={() => setCurrentPage("signup")}
               type="button"
-              className="mt-2 w-full border-2 border-white text-white py-3 rounded-lg hover:bg-white hover:text-black transition"
+              onClick={() => navigate("/signup")}
+              className="mt-2 cursor-pointer w-full border-2 border-white text-white py-3 rounded-lg hover:bg-white hover:text-black transition"
             >
               CREATE ACCOUNT
             </button>
