@@ -1,7 +1,7 @@
 {
   "version": 2,
   "rewrites": [
-    { "source": "/api/(.*)", "destination": "/backend/api/[...any].js" },
-    { "source": "/(.*)", "destination": "/frontend/interview-prep-ai/dist/$1" }
+    { "source": "/api/:path*", "destination": "/backend/api/:path*" },
+    { "source": "/:path*", "destination": "/frontend/interview-prep-ai/dist/:path*" }
   ]
 }
