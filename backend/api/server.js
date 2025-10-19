@@ -4,6 +4,15 @@ const path = require("path");
 const mongoose = require("mongoose");
 require("dotenv").config();
 
+app.use((req, res, next) => {
+  // On Vercel, req.url might be "/api/whatever"
+  if (req.url.startsWith("/api/")) {
+    req.url = req.url.replace(/^\/api/, "");
+  }
+  next();
+});
+
+
 // Import routes and middleware
 const authRoutes = require("../routes/authRoutes");
 const sessionRoutes = require("../routes/sessionRoutes");

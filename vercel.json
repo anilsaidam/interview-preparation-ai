@@ -1,12 +1,11 @@
 {
-    "version": 2,
-    "builds": [
-      { "src": "backend/api/server.js", "use": "@vercel/node" },
-      { "src": "frontend/interview-prep-ai/dist/**", "use": "@vercel/static" }
-    ],
-    "routes": [
-      { "src": "/api/(.*)", "dest": "/backend/api/server.js" },
-      { "src": "/(.*)", "dest": "/frontend/interview-prep-ai/dist/$1" }
-    ]
-  }
-  
+  "version": 2,
+  "builds": [
+    { "src": "backend/api/server.js", "use": "@vercel/node" },
+    { "src": "frontend/interview-prep-ai/dist/**", "use": "@vercel/static" }
+  ],
+  "routes": [
+    { "src": "/api/(.*)", "dest": "/backend/api/server.js" },
+    { "src": "/(.*)", "dest": "/frontend/interview-prep-ai/dist/$1" }
+  ]
+}
