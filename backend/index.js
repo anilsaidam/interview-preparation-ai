@@ -7,17 +7,16 @@ require("dotenv").config();
 const app = express(); 
 
 // Import routes and middleware
-const authRoutes = require("../routes/authRoutes");
-const sessionRoutes = require("../routes/sessionRoutes");
-const questionRoutes = require("../routes/questionRoutes");
-const atsRoutes = require("../routes/atsRoutes");
-const codingRoutes = require("../routes/codingRoutes");
-const templatesRoutes = require("../routes/templateRoutes");
-const { protect } = require("../middlewares/authMiddleware");
-const {
-  generateInterviewQuestions,
-  generateConceptExplanation,
-} = require("../controllers/aiController");
+const authRoutes = require("./routes/authRoutes");
+const sessionRoutes = require("./routes/sessionRoutes");
+const questionRoutes = require("./routes/questionRoutes");
+const atsRoutes = require("./routes/atsRoutes");
+const codingRoutes = require("./routes/codingRoutes");
+const templatesRoutes = require("./routes/templateRoutes");
+
+const { protect } = require("./middlewares/authMiddleware");
+const { generateInterviewQuestions, generateConceptExplanation } = require("./controllers/aiController");
+
 
 // Database connection helper with error handling
 const connectDB = async () => {
