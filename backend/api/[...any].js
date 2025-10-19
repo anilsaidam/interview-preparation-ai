@@ -2,6 +2,7 @@ const express = require("express");
 const cors = require("cors");
 const path = require("path");
 const mongoose = require("mongoose");
+const serverless = require("serverless-http");  // ✅ Add this line
 require("dotenv").config();
 
 const app = express(); 
@@ -69,20 +70,16 @@ app.use("/api/ai/generate-explanation", protect, generateConceptExplanation);
 // Serve uploads statically
 app.use("/uploads", express.static(path.join(__dirname, "../uploads")));
 
-// Basic root health route
+// Root route
 app.get("/", (req, res) => {
-  res.send("Career Companion AI backend is running!");
+  res.send("Career Companion AI backend is running on Vercel 🚀");
 });
 
-// Dummy test route
+// Test route
 app.get("/api/test", (req, res) => {
   res.json({ status: "success" });
 });
 
-// For Vercel serverless functions, we need to export a default function
-// that handles the request/response
+// ✅ Proper export for Vercel serverless
 module.exports = app;
-module.exports.handler = (req, res) => {
-  // Pass the request and response to the Express app
-  app(req, res);
-};
+module.exports.handler = serverless(app);
